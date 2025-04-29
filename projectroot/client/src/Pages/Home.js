@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/home.css';
-import '../App.css';
+import '../styles/App.css';
 
 export const Home = () => {
     const [isLoginOpen, setIsLoginOpen] = useState(false);
