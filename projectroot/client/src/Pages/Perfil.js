@@ -1,5 +1,5 @@
 import React from 'react';
-import './PerfilEditar.css'; // Certifica-te de que este nome bate certo com o ficheiro CSS
+import '../styles/Perfil.css';
 
 export default function PerfilEditar() {
   return (
