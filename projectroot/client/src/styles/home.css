@@ -12,7 +12,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: #0C0C0C;
     color: white;
     position: fixed;
     width: 100%;
@@ -55,7 +55,7 @@
     right: -400px;
     width: 350px;
     height: 100vh;
-    background-color: white;
+    background-color: #0C0C0C;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
     transition: right 0.3s ease-in-out;
     z-index: 1001;
@@ -74,7 +74,7 @@
 .login-content h2 {
     margin-bottom: 1.5rem;
     text-align: center;
-    color: #333;
+    color: #ffffff;
 }
 
 .login-form {
@@ -89,19 +89,21 @@
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #555;
+    color: #ffffff;
 }
 
 .form-group input {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #ddd;
+    border: 2px solid #710B0B;
     border-radius: 4px;
     box-sizing: border-box;
+    background-color: #141111;
+    color: white;
 }
 
 .login-button {
-    background-color: #333;
+    background-color: #710B0B;
     color: white;
     border: none;
     padding: 0.75rem;
@@ -112,7 +114,7 @@
 }
 
 .login-button:hover {
-    background-color: #555;
+    background-color: #af1010;
 }
 
 /* Carrossel */
@@ -147,7 +149,7 @@
     transform: translateY(-50%);
     color: white;
     max-width: 500px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: #0C0C0C;
     padding: 2rem;
     border-radius: 8px;
 }
@@ -176,7 +178,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 2px solid white;
+    border: 2px solid #121212;
     background: transparent;
     cursor: pointer;
     padding: 0;
