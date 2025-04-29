@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "react-helmet": "^6.1.0"
-  }
-}
