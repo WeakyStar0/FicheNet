@@ -5,12 +5,6 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
-  background-color: #1E1E1E; /* cinzento escuro */
-  color: white;
-}
-
 .perfil-page {
   display: flex;
   padding: 30px;
