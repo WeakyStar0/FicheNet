@@ -48,6 +48,8 @@
 .main {
     flex: 1;
     padding: 40px;
+    /* Adicionei overflow-y para o caso de o conteúdo ser maior que a tela */
+    overflow-y: auto;
 }
 
 .top-nav {
@@ -84,9 +86,20 @@
     gap: 30px;
 }
 
+/* --- ALTERAÇÕES NO ACTION CARD --- */
 .action-card {
     display: flex;
     gap: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    /* Adicionado para indicar que é clicável e para a animação */
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.action-card:hover {
+    background-color: rgba(255, 255, 255, 0.05); /* Efeito de hover subtil para tema escuro */
+    transform: translateY(-3px);
 }
 
 .icon {
@@ -102,4 +115,122 @@
 .action-card p {
     margin: 5px 0 0;
     color: #aaa;
+}
+
+
+/* --- NOVOS ESTILOS PARA O OVERLAY E FORMULÁRIO --- */
+/* Adicionado no final do ficheiro */
+
+.overlay-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Garante que fica por cima de tudo */
+    backdrop-filter: blur(4px); /* Efeito de desfoque moderno */
+}
+
+.overlay-content {
+    background: #2e2e2e; /* Fundo escuro para combinar com o tema */
+    color: #f1f1f1; /* Texto claro */
+    padding: 2rem 2.5rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid #444;
+    animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.overlay-content h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+}
+
+.overlay-content p {
+    margin-top: 0;
+    margin-bottom: 2rem;
+    color: #ccc;
+    font-size: 0.95rem;
+}
+
+.overlay-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.overlay-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #ddd;
+}
+
+.overlay-form input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background-color: #1e1e1e; /* Input mais escuro */
+    color: #f1f1f1;
+    border: 1px solid #555;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.overlay-form input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.form-actions button {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-cancel {
+    background-color: #444;
+    color: #eee;
+}
+
+.btn-cancel:hover {
+    background-color: #555;
+}
+
+.btn-submit {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-submit:hover {
+    background-color: #0056b3;
 }
