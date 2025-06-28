@@ -7,17 +7,13 @@ import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './context/AuthContext';
 
+
 // Importação das suas páginas e componentes
 import { Home } from './Pages/Home.js';
 import ProfilePage from './Pages/Perfil.js';
-import AdminDashboard from './Pages/Dashboard.js';
+import Dashboard from './Pages/Dashboard.js';
 import MainNavbar from './Components/MainNavbar.js';
 import ProtectedRoute from './Components/ProtectedRoute.js';
-
-// Placeholders para os outros dashboards
-const StudentDashboard = () => <div><h1>Dashboard do Estudante</h1></div>;
-const CompanyDashboard = () => <div><h1>Dashboard da Empresa</h1></div>;
-const ManagerDashboard = () => <div><h1>Dashboard do Gestor</h1></div>;
 
 const AppLayout = () => {
     const location = useLocation();
@@ -50,22 +46,22 @@ const router = createBrowserRouter([
       {
         path: '/dashboard/admin',
         // Apenas utilizadores com a role 'admin' podem ver esta página.
-        element: <ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>,
+        element: <ProtectedRoute allowedRoles={['admin']}><Dashboard /></ProtectedRoute>,
       },
       {
         path: '/dashboard/student',
         // Apenas utilizadores com a role 'student' podem ver esta página.
-        element: <ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>,
+        element: <ProtectedRoute allowedRoles={['student']}><Dashboard /></ProtectedRoute>,
       },
       {
         path: '/dashboard/company',
         // Apenas utilizadores com a role 'company' podem ver esta página.
-        element: <ProtectedRoute allowedRoles={['company']}><CompanyDashboard /></ProtectedRoute>,
+        element: <ProtectedRoute allowedRoles={['company']}><Dashboard /></ProtectedRoute>,
       },
       {
         path: '/dashboard/manager',
         // Apenas utilizadores com a role 'manager' podem ver esta página.
-        element: <ProtectedRoute allowedRoles={['manager']}><ManagerDashboard /></ProtectedRoute>,
+        element: <ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>,
       },
     ]
   }

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Perfil.css'; // Certifique-se de que este CSS existe e está importado
+import '../styles/Perfil.css';
+import { Helmet } from 'react-helmet';
 
 const ProfilePage = () => {
     const [profile, setProfile] = useState(null);
@@ -34,11 +35,11 @@ const ProfilePage = () => {
                 if (!profileRes.ok) {
                     // Se o token for inválido, o servidor retorna 403, limpamos e voltamos para a home
                     if (profileRes.status === 403 || profileRes.status === 401) {
-                         throw new Error('Sessão inválida. Por favor, faça login novamente.');
+                        throw new Error('Sessão inválida. Por favor, faça login novamente.');
                     }
                     throw new Error('Falha ao buscar perfil.');
                 }
-                
+
                 const profileData = await profileRes.json();
                 setProfile(profileData);
                 // Define o texto editável inicial para "Sobre Mim"
@@ -75,7 +76,7 @@ const ProfilePage = () => {
                 body: JSON.stringify({ aboutme: editableAboutMe })
             });
             if (!response.ok) throw new Error((await response.json()).error || 'Falha ao guardar "Sobre Mim".');
-            
+
             const updatedData = await response.json();
             setProfile(prevProfile => ({ ...prevProfile, aboutme: updatedData.aboutme }));
             setIsEditingAboutMe(false);
@@ -107,7 +108,7 @@ const ProfilePage = () => {
                 body: JSON.stringify({ skillIds })
             });
             if (!response.ok) throw new Error((await response.json()).error || 'Falha ao guardar alterações.');
-            
+
             alert('Competências guardadas com sucesso!');
             setIsEditingSkills(false);
         } catch (error) {
@@ -126,7 +127,7 @@ const ProfilePage = () => {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!response.ok) throw new Error((await response.json()).error);
-                
+
                 // Atualiza o estado local para desativar o botão imediatamente
                 setProfile(prevProfile => ({ ...prevProfile, wants_to_be_removed: true }));
                 alert('Pedido de remoção enviado com sucesso.');
@@ -135,7 +136,7 @@ const ProfilePage = () => {
             }
         }
     };
-    
+
     if (isLoading) return <div className="profile-page-wrapper"><h1>A carregar perfil...</h1></div>;
     if (!profile) return <div className="profile-page-wrapper"><h1>Não foi possível carregar o perfil. Por favor, tente fazer login novamente.</h1></div>;
 
@@ -143,6 +144,9 @@ const ProfilePage = () => {
 
     return (
         <div className="profile-page-wrapper">
+            <Helmet>
+                <title>Perfil - ESTGV</title>
+            </Helmet>
             <h1>O Meu Perfil</h1>
             <div className="profile-main-card">
                 <h2>{profile.full_name || profile.company_name || 'Administrador'}</h2>

@@ -101,10 +101,10 @@ export const Home = () => {
 
     return (
         <div className="unique-home">
+            <Helmet>
+                <title>Bem-vindo - ESTGV</title>
+            </Helmet>
             <div className="unique-home-wrapper">
-                <Helmet>
-                    <title>Bem-vindo - ESTGV</title>
-                </Helmet>
                 <header className="unique-header">
                     <div className="unique-header-left">
                         <div className="unique-logo">LOGO</div>

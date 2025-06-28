@@ -106,7 +106,180 @@ app.get('/api/students', async (req, res) => {
   }
 });
 
+// --- ROTA DE ADMIN PARA LISTAR TODOS OS ESTUDANTES ---
+app.get('/api/admin/students', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
 
+  try {
+    const query = `
+            SELECT 
+                u.id, 
+                u.email,
+                sp.full_name,
+                sp.course,
+                sp.graduation_year,
+                sp.wants_to_be_removed
+            FROM users u
+            JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE u.role = 'student'
+            ORDER BY sp.full_name ASC
+        `;
+
+    const { rows } = await db.pool.query(query);
+    res.json(rows);
+
+  } catch (err) {
+    console.error('Erro ao buscar lista de estudantes para admin:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+
+// --- ROTA SIMPLES PARA OBTER LISTA DE EMPRESAS (ID E NOME) ---
+app.get('/api/companies/list', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await db.pool.query('SELECT id, company_name FROM company_profiles ORDER BY company_name');
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao buscar lista de empresas:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// --- ROTA PARA UM GESTOR OU EMPRESA CRIAR UMA PROPOSTA (VERSÃO FINAL E COMPLETA) ---
+app.post('/api/proposals', authenticateToken, async (req, res) => {
+  // Obter dados do utilizador autenticado a partir do token
+  const { userId, role } = req.user;
+
+  // 1. Verificação de permissão: apenas gestores e empresas podem criar propostas.
+  if (!['manager', 'company'].includes(role)) {
+    return res.status(403).json({ error: 'Acesso negado. Apenas gestores e empresas podem criar propostas.' });
+  }
+
+  // 2. Extrair todos os dados do corpo do pedido
+  const {
+    title,
+    description,
+    proposalType,
+    workLocation,
+    applicationDeadline,
+    contractType,
+    interviewContactName,
+    interviewContactEmail,
+    skillIds,
+    targetDepartmentIds // Campo que a empresa envia
+  } = req.body;
+
+  // 3. Validação dos campos obrigatórios
+  if (!title || !description || !proposalType) {
+    return res.status(400).json({ error: 'Título, descrição e tipo são obrigatórios.' });
+  }
+
+  // Validar o companyId APENAS se for um gestor a criar a proposta
+  if (role === 'manager' && !req.body.companyId) {
+    return res.status(400).json({ error: 'A empresa é obrigatória ao criar uma proposta.' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 4. Lógica para determinar o ID do perfil da empresa (company_profiles.id)
+    let companyProfileId;
+    if (role === 'company') {
+      // Se for uma empresa a criar, obtemos o seu próprio ID de perfil a partir do seu userId.
+      const companyProfileResult = await client.query('SELECT id FROM company_profiles WHERE user_id = $1', [userId]);
+      if (companyProfileResult.rows.length === 0) {
+        // Esta verificação de segurança é importante caso haja uma inconsistência na BD
+        throw new Error('Perfil de empresa não encontrado para o utilizador logado.');
+      }
+      companyProfileId = companyProfileResult.rows[0].id;
+    } else { // se for role === 'manager'
+      // Se for um gestor, ele precisa de ter selecionado a empresa no formulário.
+      const { companyId } = req.body;
+      if (!companyId) {
+        return res.status(400).json({ error: 'É obrigatório selecionar uma empresa ao criar a proposta.' });
+      }
+      companyProfileId = companyId;
+    }
+
+    // 5. Determinar o estado inicial da proposta com base no perfil
+    const status = role === 'manager' ? 'active' : 'pending_validation';
+
+    // 6. Tratar a data para evitar erros com strings vazias
+    const deadlineForDb = applicationDeadline ? applicationDeadline : null;
+
+    // 7. Inserir a proposta na tabela principal 'proposals'
+    const proposalQuery = `
+            INSERT INTO proposals(
+                company_id, title, description, proposal_type, work_location, application_deadline, 
+                contract_type, interview_contact_name, interview_contact_email, status, created_by_user_id
+            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id
+        `;
+    const proposalValues = [
+      companyProfileId, title, description, proposalType, workLocation, deadlineForDb,
+      contractType, interviewContactName, interviewContactEmail, status, userId
+    ];
+
+    const proposalResult = await client.query(proposalQuery, proposalValues);
+    const newProposalId = proposalResult.rows[0].id;
+
+    // 8. Associar as competências (skills) na tabela de junção
+    if (skillIds && Array.isArray(skillIds) && skillIds.length > 0) {
+      const skillQuery = 'INSERT INTO proposal_skills (proposal_id, skill_id) VALUES ' + skillIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await client.query(skillQuery, [newProposalId, ...skillIds]);
+    }
+
+    // 9. Associar os departamentos alvo na tabela de junção
+    if (role === 'company' && targetDepartmentIds && Array.isArray(targetDepartmentIds) && targetDepartmentIds.length > 0) {
+      // A empresa seleciona os departamentos no formulário
+      const deptQuery = 'INSERT INTO proposal_target_departments (proposal_id, department_id) VALUES ' + targetDepartmentIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await client.query(deptQuery, [newProposalId, ...targetDepartmentIds]);
+    }
+    else if (role === 'manager') {
+      // O gestor associa automaticamente ao seu próprio departamento
+      const managerProfileResult = await client.query('SELECT department_id FROM manager_profiles WHERE user_id = $1', [userId]);
+      const departmentId = managerProfileResult.rows[0]?.department_id;
+      if (departmentId) {
+        await client.query('INSERT INTO proposal_target_departments (proposal_id, department_id) VALUES ($1, $2)', [newProposalId, departmentId]);
+      }
+    }
+
+    // 10. Se tudo correu bem, confirmar a transação
+    await client.query('COMMIT');
+    res.status(201).json({ message: 'Proposta criada com sucesso!', proposalId: newProposalId });
+
+  } catch (err) {
+    // 11. Se algo falhou, reverter todas as alterações
+    await client.query('ROLLBACK');
+    console.error('ERRO DETALHADO AO CRIAR PROPOSTA:', err.stack);
+    res.status(500).json({ error: `Erro interno do servidor: ${err.message}` });
+  } finally {
+    // 12. Libertar a conexão de volta para a pool
+    client.release();
+  }
+});
+
+// --- ROTA PARA UM GESTOR/EMPRESA VER AS SUAS PRÓPRIAS PROPOSTAS ---
+app.get('/api/proposals/my', authenticateToken, async (req, res) => {
+  const { userId } = req.user;
+  try {
+    const query = `
+            SELECT p.*, cp.company_name 
+            FROM proposals p
+            JOIN company_profiles cp ON p.company_id = cp.id
+            WHERE p.created_by_user_id = $1
+            ORDER BY p.created_at DESC
+        `;
+    const { rows } = await db.pool.query(query, [userId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao buscar as minhas propostas:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
 
 
 app.post('/api/students', async (req, res) => {
@@ -305,8 +478,122 @@ app.post('/api/managers', async (req, res) => {
   }
 });
 
+// --- ROTA PARA UM GESTOR OBTER TODAS AS PROPOSTAS DO SEU DEPARTAMENTO ---
+app.get('/api/proposals/management/all', authenticateToken, async (req, res) => {
+  const { role } = req.user;
 
+  if (!['manager', 'admin'].includes(role)) {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
 
+  try {
+    // Query agora agrega tanto os departamentos quanto as competências
+    const query = `
+            SELECT 
+                p.*, 
+                cp.company_name,
+                COALESCE(
+                    (SELECT json_agg(d.name) FROM departments d JOIN proposal_target_departments ptd ON d.id = ptd.department_id WHERE ptd.proposal_id = p.id), 
+                    '[]'::json
+                ) as target_departments,
+                COALESCE(
+                    (SELECT json_agg(s.*) FROM skills s JOIN proposal_skills ps ON s.id = ps.skill_id WHERE ps.proposal_id = p.id),
+                    '[]'::json
+                ) as skills
+            FROM proposals p
+            JOIN company_profiles cp ON p.company_id = cp.id
+            GROUP BY p.id, cp.company_name
+            ORDER BY 
+                CASE p.status
+                    WHEN 'pending_validation' THEN 1
+                    WHEN 'active' THEN 2
+                    ELSE 3
+                END,
+                p.created_at DESC
+        `;
+    const { rows } = await db.pool.query(query);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao buscar todas as propostas para gestão:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// --- ROTA PARA UM GESTOR EDITAR UMA PROPOSTA ---
+app.put('/api/proposals/:proposalId', authenticateToken, async (req, res) => {
+  const { role } = req.user;
+  const { proposalId } = req.params;
+
+  // Apenas gestores podem editar propostas desta forma
+  if (role !== 'manager') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  // Extrai todos os campos que podem ser editados
+  const { title, description, workLocation, contractType, status } = req.body;
+
+  // Aqui pode adicionar mais validações se necessário
+
+  try {
+    const query = `
+            UPDATE proposals 
+            SET 
+                title = $1, 
+                description = $2, 
+                work_location = $3,
+                contract_type = $4,
+                status = $5,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $6
+            RETURNING *
+        `;
+    const { rows } = await db.pool.query(query, [title, description, workLocation, contractType, status, proposalId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Proposta não encontrada.' });
+    }
+
+    res.status(200).json({ message: 'Proposta atualizada com sucesso!', proposal: rows[0] });
+
+  } catch (err) {
+    console.error('Erro ao editar proposta:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+app.put('/api/proposals/:proposalId/status', authenticateToken, async (req, res) => {
+  const { userId, role } = req.user;
+  const { proposalId } = req.params;
+  const { newStatus } = req.body;
+
+  // Apenas gestores e admins podem alterar o status
+  if (!['manager', 'admin'].includes(role)) {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  if (!['active', 'inactive', 'expired', 'pending_validation'].includes(newStatus)) {
+    return res.status(400).json({ error: 'Estado inválido fornecido.' });
+  }
+
+  try {
+    const query = `
+            UPDATE proposals 
+            SET status = $1, validated_by_user_id = $2, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $3
+            RETURNING *
+        `;
+    const { rows } = await db.pool.query(query, [newStatus, userId, proposalId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Proposta não encontrada.' });
+    }
+
+    res.status(200).json({ message: 'Estado da proposta atualizado com sucesso!', proposal: rows[0] });
+  } catch (err) {
+    console.error('Erro ao atualizar estado da proposta:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
 
 
 
@@ -426,47 +713,47 @@ app.put('/api/students/me/skills', authenticateToken, async (req, res) => {
 
 // Endpoint para ATUALIZAR o "Sobre Mim" do utilizador logado
 app.put('/api/users/me/aboutme', authenticateToken, async (req, res) => {
-    const { userId } = req.user;
-    const { aboutme } = req.body;
+  const { userId } = req.user;
+  const { aboutme } = req.body;
 
-    if (typeof aboutme !== 'string') {
-        return res.status(400).json({ error: 'O campo "aboutme" é obrigatório.' });
-    }
+  if (typeof aboutme !== 'string') {
+    return res.status(400).json({ error: 'O campo "aboutme" é obrigatório.' });
+  }
 
-    try {
-        const query = 'UPDATE users SET aboutme = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING aboutme';
-        const result = await db.pool.query(query, [aboutme, userId]);
-        
-        res.status(200).json(result.rows[0]);
-    } catch (err) {
-        console.error('Erro ao atualizar "Sobre Mim":', err);
-        res.status(500).json({ error: 'Erro interno do servidor.' });
-    }
+  try {
+    const query = 'UPDATE users SET aboutme = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING aboutme';
+    const result = await db.pool.query(query, [aboutme, userId]);
+
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error('Erro ao atualizar "Sobre Mim":', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 // Endpoint para um ESTUDANTE solicitar a remoção
 app.post('/api/students/me/request-removal', authenticateToken, async (req, res) => {
-    const { userId, role } = req.user;
+  const { userId, role } = req.user;
 
-    // Dupla verificação para garantir que apenas um estudante pode usar esta rota
-    if (role !== 'student') {
-        return res.status(403).json({ error: 'Acesso negado. Apenas estudantes podem solicitar remoção.' });
+  // Dupla verificação para garantir que apenas um estudante pode usar esta rota
+  if (role !== 'student') {
+    return res.status(403).json({ error: 'Acesso negado. Apenas estudantes podem solicitar remoção.' });
+  }
+
+  try {
+    // Atualiza a flag na tabela de perfis de estudante, não na de users
+    const query = 'UPDATE student_profiles SET wants_to_be_removed = TRUE WHERE user_id = $1';
+    const result = await db.pool.query(query, [userId]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
     }
 
-    try {
-        // Atualiza a flag na tabela de perfis de estudante, não na de users
-        const query = 'UPDATE student_profiles SET wants_to_be_removed = TRUE WHERE user_id = $1';
-        const result = await db.pool.query(query, [userId]);
-
-        if (result.rowCount === 0) {
-            return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
-        }
-        
-        res.status(200).json({ message: 'Pedido de remoção enviado com sucesso. A administração irá processar o seu pedido.' });
-    } catch (err) {
-        console.error('Erro ao solicitar remoção:', err);
-        res.status(500).json({ error: 'Erro interno do servidor.' });
-    }
+    res.status(200).json({ message: 'Pedido de remoção enviado com sucesso. A administração irá processar o seu pedido.' });
+  } catch (err) {
+    console.error('Erro ao solicitar remoção:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 

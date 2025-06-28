@@ -43,7 +43,7 @@ function AddCompanyOverlay({ onClose, onSubmit }) {
             <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
                 <h2>Adicionar Nova Empresa</h2>
                 <p>Crie um novo perfil para uma empresa parceira.</p>
-                
+
                 <form onSubmit={handleSubmit} className="overlay-form">
                     <div className="form-group">
                         <label htmlFor="companyName">Nome da Empresa</label>
@@ -67,7 +67,7 @@ function AddCompanyOverlay({ onClose, onSubmit }) {
                             required
                         />
                     </div>
-                     <div className="form-group">
+                    <div className="form-group">
                         <label htmlFor="password">Password</label>
                         <input
                             type="password"
@@ -80,14 +80,14 @@ function AddCompanyOverlay({ onClose, onSubmit }) {
                     </div>
                     <div className="form-group">
                         <label htmlFor="description">Descrição da Empresa</label>
-<textarea
-    id="description"
-    name="description"
-    rows="4"
-    className="textarea-description"
-    value={formData.description}
-    onChange={handleChange}
-/>
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="4"
+                            className="textarea-description"
+                            value={formData.description}
+                            onChange={handleChange}
+                        />
                     </div>
                     <div className="form-group">
                         <label htmlFor="websiteUrl">Website (Opcional)</label>
@@ -100,7 +100,7 @@ function AddCompanyOverlay({ onClose, onSubmit }) {
                             placeholder="https://www.exemplo.com"
                         />
                     </div>
-                    
+
                     <div className="form-actions">
                         <button type="button" className="btn-cancel" onClick={handleClose}>Cancelar</button>
                         <button type="submit" className="btn-submit">Adicionar Empresa</button>
