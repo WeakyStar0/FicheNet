@@ -80,13 +80,14 @@ function AddCompanyOverlay({ onClose, onSubmit }) {
                     </div>
                     <div className="form-group">
                         <label htmlFor="description">Descrição da Empresa</label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            rows="4"
-                            value={formData.description}
-                            onChange={handleChange}
-                        ></textarea>
+<textarea
+    id="description"
+    name="description"
+    rows="4"
+    className="textarea-description"
+    value={formData.description}
+    onChange={handleChange}
+/>
                     </div>
                     <div className="form-group">
                         <label htmlFor="websiteUrl">Website (Opcional)</label>
