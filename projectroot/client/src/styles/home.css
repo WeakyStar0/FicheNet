@@ -279,3 +279,24 @@
         max-width: none;
     }
 }
+
+.user-actions-logged-in {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.custom-user-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.custom-logout-button {
+    background-color: #710B0B;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
