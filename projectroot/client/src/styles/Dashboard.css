@@ -19,8 +19,13 @@
 }
 
 .logo {
-    height: 60px;
-    margin-bottom: 10px;
+    height: 10vh;
+    margin-bottom: 2vh;
+}
+
+.nav-logo {
+    height: 5vh;
+    margin-right: 1vw;
 }
 
 .admin-tag {
@@ -124,13 +129,27 @@
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 95vh;
     background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* Garante que fica por cima de tudo */
-    backdrop-filter: blur(4px); /* Efeito de desfoque moderno */
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.overlay-backdrop-2 {
+    position: fixed;
+    top: -7.3vh;
+    left: -17.3vw;
+    width: 100vw;
+    height: 95vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .overlay-content {

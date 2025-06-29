@@ -2,10 +2,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Importar o hook useAuth
+import { useAuth } from '../context/AuthContext';
 import '../styles/home.css';
 import '../styles/App.css';
 import { Helmet } from 'react-helmet';
+
+// Componente para um ícone (SVG) para usar nas secções
+const Icon = ({ path }) => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d={path} />
+    </svg>
+);
 
 export const Home = () => {
     // Hooks e Estados
@@ -23,7 +30,7 @@ export const Home = () => {
     const [password, setPassword] = useState('');
     const [loginType, setLoginType] = useState('ex/aluno');
     const [error, setError] = useState('');
-
+    
     // Slides
     const slides = [
         'https://dep.estgv.ipv.pt/departamentos/dgest/wp-content/uploads/sites/6/2016/06/foto-pag1-2.png',
@@ -55,40 +62,24 @@ export const Home = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isLoginOpen]);
 
-    // Mapeamento dos tipos de utilizador para os valores da BD
-    const loginTypeMap = {
-        'admin': 'admin',
-        'empresa': 'company',
-        'gestor de departamento': 'manager',
-        'ex/aluno': 'student'
-    };
+    const loginTypeMap = { 'admin': 'admin', 'empresa': 'company', 'gestor de departamento': 'manager', 'ex/aluno': 'student' };
     const loginTypes = Object.keys(loginTypeMap);
 
-    // Função para lidar com a submissão do formulário de login
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         setError('');
-
         const roleForApi = loginTypeMap[loginType];
-
         try {
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, role: roleForApi }),
             });
-
             const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Ocorreu um erro.');
-            }
-
-            // Usar a função de login do contexto
+            if (!response.ok) throw new Error(data.error || 'Ocorreu um erro.');
             login(data);
-            setIsLoginOpen(false); // Fecha o painel de login
-            navigate('/perfil'); // Redireciona para o perfil
-
+            setIsLoginOpen(false);
+            navigate('/perfil');
         } catch (err) {
             setError(err.message);
         }
@@ -96,113 +87,78 @@ export const Home = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/'); // Redireciona para a home após o logout
+        navigate('/');
     };
 
     return (
-        <div className="unique-home">
+        <div className="hp-landing-page">
             <Helmet>
-                <title>Bem-vindo - ESTGV</title>
+                <title>FicheNet - Conectando Talento ao Futuro</title>
             </Helmet>
-            <div className="unique-home-wrapper">
-                <header className="unique-header">
-                    <div className="unique-header-left">
-                        <div className="unique-logo">LOGO</div>
+
+            <header className="unique-header">
+                <div className="unique-header-left">
+                    <div className="unique-logo">
+                        <img src="https://imgur.com/F8aAiKi.png" alt="ESTGV Logo" className="nav-logo" />
                     </div>
-                    <div className="unique-header-right">
-                        {/* Renderização condicional dos botões */}
-                        {!user ? (
-                            <button className="custom-login-icon" onClick={toggleLogin}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </button>
-                        ) : (
-                            <div className="user-actions-logged-in">
-                                <Link to="/perfil" className="custom-user-link">O Meu Perfil</Link>
-                                <button className="custom-logout-button" onClick={handleLogout}>Logout</button>
-                            </div>
-                        )}
-                    </div>
-                </header>
-
-                {/* Mostra o painel de login apenas se o utilizador não estiver logado e o painel estiver aberto */}
-                {!user && isLoginOpen && (
-                    <div className={`custom-login-panel ${isLoginOpen ? 'active' : ''}`} ref={loginPanelRef}>
-                        <div className="custom-login-content">
-                            <h2>LOGIN</h2>
-                            <form className="custom-login-form" onSubmit={handleLoginSubmit}>
-                                <div className="custom-form-field">
-                                    <label htmlFor="email">Email</label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div className="custom-form-field">
-                                    <label htmlFor="password">Password</label>
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        name="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="custom-login-type-container">
-                                    <div className="custom-type-selector" onClick={() => setShowDropdown(!showDropdown)}>
-                                        {loginType}
-                                        <svg className={`custom-dropdown-icon ${showDropdown ? 'rotated' : ''}`} viewBox="0 0 24 24">
-                                            <path d="M7 10l5 5 5-5z" />
-                                        </svg>
-                                    </div>
-                                    {showDropdown && (
-                                        <div className="custom-type-dropdown">
-                                            {loginTypes.map((type) => (
-                                                <div
-                                                    key={type}
-                                                    className={`custom-dropdown-item ${loginType === type ? 'selected' : ''}`}
-                                                    onClick={() => {
-                                                        setLoginType(type);
-                                                        setShowDropdown(false);
-                                                    }}
-                                                >
-                                                    {type}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {error && <p style={{ color: '#ff4d4d', textAlign: 'center', marginTop: '10px' }}>{error}</p>}
-
-                                <button type="submit" className="custom-submit-button">Login</button>
-                            </form>
+                </div>
+                <div className="unique-header-right">
+                    {!user ? (
+                        <button className="custom-login-icon" onClick={toggleLogin}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </button>
+                    ) : (
+                        <div className="user-actions-logged-in">
+                            <Link to="/perfil" className="custom-user-link">O Meu Perfil</Link>
+                            <button className="custom-logout-button" onClick={handleLogout}>Logout</button>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
+            </header>
 
+            {!user && isLoginOpen && (
+                <div className={`custom-login-panel ${isLoginOpen ? 'active' : ''}`} ref={loginPanelRef}>
+                    <div className="custom-login-content">
+                        <h2>LOGIN</h2>
+                        <form className="custom-login-form" onSubmit={handleLoginSubmit}>
+                            <div className="custom-form-field">
+                                <label htmlFor="email">Email</label>
+                                <input type="email" id="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                            </div>
+                            <div className="custom-form-field">
+                                <label htmlFor="password">Password</label>
+                                <input type="password" id="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                            </div>
+                            <div className="custom-login-type-container">
+                                <div className="custom-type-selector" onClick={() => setShowDropdown(!showDropdown)}>
+                                    {loginType}
+                                    <svg className={`custom-dropdown-icon ${showDropdown ? 'rotated' : ''}`} viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
+                                </div>
+                                {showDropdown && (
+                                    <div className="custom-type-dropdown">
+                                        {loginTypes.map((type) => (
+                                            <div key={type} className={`custom-dropdown-item ${loginType === type ? 'selected' : ''}`} onClick={() => { setLoginType(type); setShowDropdown(false); }}>
+                                                {type}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            {error && <p style={{ color: '#ff4d4d', textAlign: 'center', marginTop: '10px' }}>{error}</p>}
+                            <button type="submit" className="custom-submit-button">Login</button>
+                        </form>
+                    </div>
+                </div>
+            )}
+            
+            <section className="hp-hero-section">
                 <div className="unique-carousel">
                     {slides.map((slide, index) => (
                         <div
                             key={index}
                             className={`unique-slide ${index === currentSlide ? 'showing' : ''}`}
-                            style={{ backgroundImage: `linear-gradient(rgba(12, 12, 12, 1), rgba(12, 12, 12, 0.3)), url(${slide})` }}
-                        >
-                            {index === currentSlide && (
-                                <div className="unique-slide-content">
-                                    <h1>Bem Vindo</h1>
-                                    <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
-                                </div>
-                            )}
-                        </div>
+                            style={{ backgroundImage: `linear-gradient(to top, rgba(18, 18, 18, 1) 0%, rgba(18, 18, 18, 0.5) 100%), url(${slide})` }}
+                        />
                     ))}
                     <div className="unique-carousel-indicators">
                         {slides.map((_, index) => (
@@ -214,7 +170,71 @@ export const Home = () => {
                         ))}
                     </div>
                 </div>
-            </div>
+                
+                <div className="hp-hero-content-wrapper">
+                    <div className="hp-hero-content">
+                        <h1>Conectando Talento ao Futuro</h1>
+                        <p>A plataforma que liga os estudantes e diplomados da ESTGV às melhores oportunidades de emprego e estágio do mercado.</p>
+                        <a href="#how-it-works" className="hp-cta-button">Descubra Como</a>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="how-it-works" className="hp-section hp-how-it-works-section">
+                <h2>Simples. Rápido. Eficaz.</h2>
+                <div className="hp-steps-container">
+                    <div className="hp-step-card">
+                        <Icon path="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+                        <h3>Crie o seu Perfil</h3>
+                        <p>Complete o seu perfil com as suas competências e interesses para que o nosso sistema inteligente possa encontrar as melhores propostas para si.</p>
+                    </div>
+                    <div className="hp-step-card">
+                        <Icon path="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" />
+                        <h3>Descubra Oportunidades</h3>
+                        <p>Receba recomendações personalizadas ou explore livremente centenas de vagas de emprego e estágio de empresas parceiras.</p>
+                    </div>
+                    <div className="hp-step-card">
+                        <Icon path="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <h3>Inicie a sua Carreira</h3>
+                        <p>Demonstre interesse, contacte as empresas e dê o próximo passo rumo a uma carreira de sucesso com o apoio da ESTGV.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section className="hp-section hp-stats-section">
+                <div className="hp-stats-container">
+                    <div className="hp-stat-item">
+                        <span className="hp-stat-number">150+</span>
+                        <span className="hp-stat-label">Empresas Parceiras</span>
+                    </div>
+                    <div className="hp-stat-item">
+                        <span className="hp-stat-number">300+</span>
+                        <span className="hp-stat-label">Propostas Ativas</span>
+                    </div>
+                    <div className="hp-stat-item">
+                        <span className="hp-stat-number">95%</span>
+                        <span className="hp-stat-label">Compatibilidade Média</span>
+                    </div>
+                </div>
+            </section>
+
+            <section className="hp-section hp-partners-section">
+                <h2>Empresas que Confiam no Talento ESTGV</h2>
+                <div className="hp-logos-container">
+                    <img src="https://logo.clearbit.com/microsoft.com" alt="Microsoft Logo" />
+                    <img src="https://logo.clearbit.com/google.com" alt="Google Logo" />
+                    <img src="https://logo.clearbit.com/feedzai.com" alt="Feedzai Logo" />
+                    <img src="https://logo.clearbit.com/criticalsoftware.com" alt="Critical Software Logo" />
+                    <img src="https://logo.clearbit.com/outsystems.com" alt="Outsystems Logo" />
+                </div>
+            </section>
+            
+            <footer className="hp-footer">
+                <div className="hp-footer-content">
+                    <p>© 2024 FicheNet ESTGV. Todos os direitos reservados.</p>
+                    <p>Um projeto de TDM / Projeto Integrado III.</p>
+                </div>
+            </footer>
         </div>
     );
 };

@@ -1,0 +1,121 @@
+.proposal-feed-page {
+    padding: 2rem;
+    transform: translateY(3vh);
+}
+
+.proposal-feed-header {
+}
+
+.filter-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.filter-bar input,
+.filter-bar select {
+}
+
+.proposal-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.proposal-card {
+    background-color: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.proposal-card:hover {
+    transform: translateY(-5px);
+    border-color: #710B0B;
+}
+
+.proposal-card-header {
+}
+
+.proposal-company {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.proposal-title-tags {
+    color: #2ecc71;
+    font-weight: 500;
+}
+
+.proposal-description {
+    color: #aaa;
+}
+
+.proposal-title-overlay {
+    color: #e53935;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.company-name-overlay {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: #ccc;
+}
+
+.proposal-details-grid.overlay {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 0.75rem 2rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.proposal-details-grid.overlay div {
+    font-weight: 500;
+    color: #c5c5c5;
+}
+
+.proposal-details-grid.overlay .detail-value {
+    font-weight: 400;
+    color: #f1f1f1;
+}
+
+.proposal-details-section.contact {
+    background-color: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+}
+
+/* src/styles/ProposalFeed.css */
+
+/* ... (seus estilos existentes) ... */
+
+.recommendation-section {
+    background-color: rgba(113, 11, 11, 0.1);
+    border: 1px solid #710B0B;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.recommendation-title {
+    margin-top: 0;
+    color: #e57373;
+}
+
+.proposal-list.recommended {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.section-title {
+    margin-top: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #2a2a2a;
+}

@@ -34,13 +34,16 @@ const MainNavbar = () => {
         <header className="main-navbar-wrapper">
             <div className="navbar-section navbar-left">
                 <Link to="/" className="navbar-logo">
-                    LOGO
+                    <img src="https://imgur.com/F8aAiKi.png" alt="ESTGV Logo" className="nav-logo" />
                 </Link>
             </div>
             <div className="navbar-section navbar-center">
                 <Link to={getDashboardPath()} className="navbar-link">
                     Dashboard
                 </Link>
+                {user && user.role === 'student' && (
+                    <Link to="/propostas" className="navbar-link">Propostas</Link>
+                )}
                 {/* Poderia adicionar mais links aqui no futuro */}
             </div>
             <div className="navbar-section navbar-right">

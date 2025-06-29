@@ -1,4 +1,4 @@
-// src/index.js (COMPLETO E ATUALIZADO)
+// src/index.js
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -14,19 +14,20 @@ import ProfilePage from './Pages/Perfil.js';
 import Dashboard from './Pages/Dashboard.js';
 import MainNavbar from './Components/MainNavbar.js';
 import ProtectedRoute from './Components/ProtectedRoute.js';
+import ProposalFeedPage from './Pages/ProposalFeedPage';
 
 const AppLayout = () => {
-    const location = useLocation();
-    const showMainNavbar = location.pathname !== '/';
+  const location = useLocation();
+  const showMainNavbar = location.pathname !== '/';
 
-    return (
-        <AuthProvider>
-            {showMainNavbar && <MainNavbar />}
-            <main>
-                <Outlet />
-            </main>
-        </AuthProvider>
-    );
+  return (
+    <AuthProvider>
+      {showMainNavbar && <MainNavbar />}
+      <main>
+        <Outlet />
+      </main>
+    </AuthProvider>
+  );
 };
 
 const router = createBrowserRouter([
@@ -37,31 +38,29 @@ const router = createBrowserRouter([
         path: '/',
         element: <Home />,
       },
-      // 2. Proteger as rotas
       {
         path: '/perfil',
-        // Qualquer utilizador logado pode ver o seu perfil. Não precisa de 'allowedRoles'.
         element: <ProtectedRoute><ProfilePage /></ProtectedRoute>,
       },
       {
         path: '/dashboard/admin',
-        // Apenas utilizadores com a role 'admin' podem ver esta página.
         element: <ProtectedRoute allowedRoles={['admin']}><Dashboard /></ProtectedRoute>,
       },
       {
         path: '/dashboard/student',
-        // Apenas utilizadores com a role 'student' podem ver esta página.
         element: <ProtectedRoute allowedRoles={['student']}><Dashboard /></ProtectedRoute>,
       },
       {
         path: '/dashboard/company',
-        // Apenas utilizadores com a role 'company' podem ver esta página.
         element: <ProtectedRoute allowedRoles={['company']}><Dashboard /></ProtectedRoute>,
       },
       {
         path: '/dashboard/manager',
-        // Apenas utilizadores com a role 'manager' podem ver esta página.
         element: <ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>,
+      },
+      {
+        path: '/propostas',
+        element: <ProtectedRoute allowedRoles={['student']}><ProposalFeedPage /></ProtectedRoute>,
       },
     ]
   }

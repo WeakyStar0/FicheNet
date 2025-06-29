@@ -758,11 +758,260 @@ app.post('/api/students/me/request-removal', authenticateToken, async (req, res)
 
 
 
+// ROTA GET /api/proposals
+app.get('/api/proposals', authenticateToken, async (req, res) => {
+  try {
+    const query = `
+            SELECT 
+                p.id,
+                p.company_id,
+                p.title,
+                p.description,
+                p.proposal_type,
+                p.work_location,
+                p.application_deadline,
+                p.contract_type,
+                p.interview_contact_name,
+                p.interview_contact_email,
+                p.status,
+                p.created_by_user_id,
+                p.validated_by_user_id,
+                p.created_at,
+                p.updated_at,
+                cp.company_name,
+                COALESCE(
+                    (SELECT json_agg(s.*) FROM skills s JOIN proposal_skills ps ON s.id = ps.skill_id WHERE ps.proposal_id = p.id),
+                    '[]'::json
+                ) as skills
+            FROM proposals p
+            JOIN company_profiles cp ON p.company_id = cp.id
+            WHERE p.status = 'active'
+            ORDER BY p.created_at DESC
+        `;
+    const { rows } = await db.pool.query(query);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao buscar propostas ativas:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// --- ROTA PARA UM ESTUDANTE MOSTRAR INTERESSE (CRIAR UM MATCH) ---
+app.post('/api/proposals/:proposalId/match', authenticateToken, async (req, res) => {
+  const { userId, role } = req.user;
+  const { proposalId } = req.params;
+
+  if (role !== 'student') {
+    return res.status(403).json({ error: 'Apenas estudantes podem mostrar interesse.' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    // Obter o ID do perfil de estudante a partir do ID do utilizador
+    const profileResult = await client.query('SELECT id FROM student_profiles WHERE user_id = $1', [userId]);
+    if (profileResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
+    }
+    const studentProfileId = profileResult.rows[0].id;
+
+    // Inserir o match
+    await client.query('INSERT INTO matches (student_profile_id, proposal_id) VALUES ($1, $2)', [studentProfileId, proposalId]);
+
+    res.status(201).json({ message: 'Interesse registado com sucesso!' });
+
+  } catch (err) {
+    // Lidar com o caso de o match já existir (violação de chave única)
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Você já demonstrou interesse nesta proposta.' });
+    }
+    console.error('Erro ao criar match:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  } finally {
+    client.release();
+  }
+});
+
+// --- ROTA PARA UM ESTUDANTE OBTER AS SUAS PROPOSTAS DE INTERESSE (MATCHES) ---
+app.get('/api/students/me/matches', authenticateToken, async (req, res) => {
+  const { userId, role } = req.user;
+
+  if (role !== 'student') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  try {
+    const studentProfile = await db.pool.query('SELECT id FROM student_profiles WHERE user_id = $1', [userId]);
+    if (studentProfile.rows.length === 0) {
+      return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
+    }
+    const studentProfileId = studentProfile.rows[0].id;
+
+    // Query que junta as tabelas para obter os detalhes das propostas com match
+    const query = `
+            SELECT 
+                p.id, p.title, p.description, p.proposal_type, p.work_location, p.application_deadline, 
+                p.contract_type, p.interview_contact_name, p.interview_contact_email,
+                cp.company_name,
+                COALESCE(
+                    (SELECT json_agg(s.*) FROM skills s JOIN proposal_skills ps ON s.id = ps.skill_id WHERE ps.proposal_id = p.id),
+                    '[]'::json
+                ) as skills
+            FROM proposals p
+            JOIN company_profiles cp ON p.company_id = cp.id
+            JOIN matches m ON p.id = m.proposal_id
+            WHERE m.student_profile_id = $1
+            ORDER BY m.created_at DESC
+        `;
+    const { rows } = await db.pool.query(query, [studentProfileId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao buscar matches do estudante:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+app.delete('/api/proposals/:proposalId/match', authenticateToken, async (req, res) => {
+  const { userId, role } = req.user;
+  const { proposalId } = req.params;
+
+  if (role !== 'student') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    const studentProfile = await client.query('SELECT id FROM student_profiles WHERE user_id = $1', [userId]);
+    if (studentProfile.rows.length === 0) {
+      return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
+    }
+    const studentProfileId = studentProfile.rows[0].id;
+
+    // Query de DELETE segura que só apaga o match do utilizador logado
+    const result = await client.query(
+      'DELETE FROM matches WHERE student_profile_id = $1 AND proposal_id = $2',
+      [studentProfileId, proposalId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Interesse não encontrado ou já removido.' });
+    }
+
+    res.status(200).json({ message: 'Interesse removido com sucesso.' });
+  } catch (err) {
+    console.error('Erro ao remover match:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  } finally {
+    client.release();
+  }
+});
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --- ROTA PARA OBTER RECOMENDAÇÕES DE PROPOSTAS PARA O ESTUDANTE LOGADO ---
+app.get('/api/proposals/recommended', authenticateToken, async (req, res) => {
+  const { userId, role } = req.user;
+
+  if (role !== 'student') {
+    return res.status(403).json({ error: 'Apenas estudantes podem receber recomendações.' });
+  }
+
+  try {
+    const client = await db.pool.connect();
+
+    // 1. Obter o perfil completo do estudante (incluindo as suas skills e o seu departamento)
+    const studentProfileQuery = `
+            SELECT sp.*, u.role, d.id as department_id,
+                   COALESCE(
+                       (SELECT json_agg(s.id) FROM skills s JOIN student_skills ss ON s.id = ss.skill_id WHERE ss.student_profile_id = sp.id),
+                       '[]'::json
+                   ) as skill_ids
+            FROM student_profiles sp
+            JOIN users u ON sp.user_id = u.id
+            LEFT JOIN departments d ON sp.course = d.name -- Tentativa de ligar o curso a um departamento
+            WHERE sp.user_id = $1
+        `;
+    const studentResult = await client.query(studentProfileQuery, [userId]);
+    if (studentResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
+    }
+    const studentProfile = studentResult.rows[0];
+    const studentSkillIds = new Set(studentProfile.skill_ids);
+    const studentDepartmentId = studentProfile.department_id;
+
+    // 2. Obter TODAS as propostas ativas com as suas skills e departamentos requeridos
+    const proposalsQuery = `
+            SELECT 
+                p.id, p.title, p.description, cp.company_name, p.proposal_type,
+                COALESCE((SELECT json_agg(ps.skill_id) FROM proposal_skills ps WHERE ps.proposal_id = p.id), '[]'::json) as required_skill_ids,
+                COALESCE((SELECT json_agg(ptd.department_id) FROM proposal_target_departments ptd WHERE ptd.proposal_id = p.id), '[]'::json) as target_department_ids
+            FROM proposals p
+            JOIN company_profiles cp ON p.company_id = cp.id
+            WHERE p.status = 'active'
+        `;
+    const proposalsResult = await client.query(proposalsQuery);
+    const allProposals = proposalsResult.rows;
+
+    // Obter todas as skills de uma vez para saber o tipo
+    const allSkillsResult = await client.query('SELECT id, type FROM skills');
+    const skillTypeMap = new Map(allSkillsResult.rows.map(s => [s.id, s.type]));
+
+    client.release();
+
+    // 3. O ALGORITMO DE SCORING (A "IA")
+    const scoredProposals = allProposals.map(proposal => {
+      let score = 0;
+
+      // Pontuar com base nas skills
+      proposal.required_skill_ids.forEach(requiredSkillId => {
+        if (studentSkillIds.has(requiredSkillId)) {
+          const skillType = skillTypeMap.get(requiredSkillId);
+          if (skillType === 'technical') {
+            score += 15; // Pontuação alta para skills técnicas
+          } else if (skillType === 'softskill') {
+            score += 5; // Pontuação mais baixa para soft skills
+          }
+        }
+      });
+
+      // Pontuar com base no departamento
+      if (studentDepartmentId && proposal.target_department_ids.includes(studentDepartmentId)) {
+        score += 30; // Bónus grande por correspondência de departamento
+      }
+
+      return { ...proposal, score };
+    });
+
+    // 4. Filtrar, Ordenar e Devolver as melhores recomendações
+    const recommendations = scoredProposals
+      .filter(p => p.score > 0) // Só recomenda se houver pelo menos uma correspondência
+      .sort((a, b) => b.score - a.score) // Ordenar do score mais alto para o mais baixo
+      .slice(0, 5); // Devolver o Top 5
+
+    res.json(recommendations);
+
+  } catch (err) {
+    console.error('Erro ao gerar recomendações:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
 
 
 
