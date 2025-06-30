@@ -1,6 +1,6 @@
 .proposal-feed-page {
     padding: 2rem;
-    transform: translateY(3vh);
+     padding-top: 3rem;
 }
 
 .proposal-feed-header {
@@ -91,9 +91,110 @@
     margin-top: 1.5rem;
 }
 
-/* src/styles/ProposalFeed.css */
+.pro-card-stylish {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    background-color: #1c1c1c; /* Um pouco mais claro que o fundo */
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
 
-/* ... (seus estilos existentes) ... */
+.pro-card-stylish:hover {
+    transform: translateY(-5px);
+    border-color: #710B0B;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Placeholder do Logo */
+.pro-card-logo {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #710B0B, #af1010);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Container do Conteúdo Principal */
+.pro-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cabeçalho do Card (Empresa + Favorito) */
+.pro-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.25rem;
+}
+
+.pro-card-company {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #aaa;
+}
+
+.pro-card-favorite-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    line-height: 0;
+}
+
+.pro-card-favorite-btn svg {
+    transition: all 0.2s ease;
+}
+
+.pro-card-favorite-btn:hover svg {
+    stroke: #e53935;
+    transform: scale(1.1);
+}
+
+/* Título, Descrição e Footer */
+.pro-card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    margin-bottom: 0.75rem;
+}
+
+.pro-card-description {
+    font-size: 0.95rem;
+    color: #b0b0b0;
+    line-height: 1.5;
+    margin: 0;
+    margin-bottom: 1rem;
+}
+
+.pro-card-footer {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto; /* Empurra o footer para o fundo se houver espaço */
+}
+
+.pro-card-tag {
+    background-color: rgba(229, 57, 53, 0.15);
+    color: #e57373;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
 
 .recommendation-section {
     background-color: rgba(113, 11, 11, 0.1);

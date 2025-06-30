@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import '../../styles/Dashboard.css'; // Reutilizamos o CSS
+import '../../styles/Dashboard.css';
 
 const StudentList = () => {
     const [students, setStudents] = useState([]);
@@ -12,22 +12,24 @@ const StudentList = () => {
     const [isLoading, setIsLoading] = useState(true);
     const { token } = useAuth();
 
+    const fetchStudents = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/admin/students', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Falha ao buscar estudantes.');
+            const data = await response.json();
+            setStudents(data);
+            setFilteredStudents(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchStudents = async () => {
-            try {
-                const response = await fetch('/api/admin/students', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error('Falha ao buscar estudantes.');
-                const data = await response.json();
-                setStudents(data);
-                setFilteredStudents(data);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchStudents();
     }, [token]);
 
@@ -44,6 +46,30 @@ const StudentList = () => {
         }
         setFilteredStudents(result);
     }, [searchTerm, filterRemoval, students]);
+
+    const handleDeleteStudent = async (studentId, studentName) => {
+        if (window.confirm(`Tem a certeza que deseja apagar permanentemente a conta de ${studentName}? Esta ação não pode ser desfeita.`)) {
+            try {
+                const response = await fetch(`/api/admin/students/${studentId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ocorreu um erro ao apagar a conta.');
+                }
+                
+                alert(data.message);
+                fetchStudents(); // Atualiza a lista para remover o utilizador apagado
+
+            } catch (error) {
+                console.error("Erro ao apagar estudante:", error);
+                alert(`Erro: ${error.message}`);
+            }
+        }
+    };
 
     if (isLoading) return <p>A carregar estudantes...</p>;
 
@@ -74,6 +100,7 @@ const StudentList = () => {
                         <th>Email</th>
                         <th>Curso</th>
                         <th>Estado</th>
+                        <th>Ações</th> {/* 3. Nova coluna para as ações */}
                     </tr>
                 </thead>
                 <tbody>
@@ -85,6 +112,17 @@ const StudentList = () => {
                             <td>
                                 {student.wants_to_be_removed && (
                                     <span className="status-badge danger">Remoção Pedida</span>
+                                )}
+                            </td>
+                            <td>
+                                {/* 4. Botão de apagar só aparece se houver pedido */}
+                                {student.wants_to_be_removed && (
+                                    <button
+                                        className="btn-delete-small"
+                                        onClick={() => handleDeleteStudent(student.id, student.full_name)}
+                                    >
+                                        Apagar Conta
+                                    </button>
                                 )}
                             </td>
                         </tr>

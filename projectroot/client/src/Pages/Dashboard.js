@@ -79,6 +79,7 @@ const Dashboard = () => {
                 <div className="logo-section">
                     <img src="https://imgur.com/F8aAiKi.png" alt="ESTGV Logo" className="logo" />
                     <h2>ESTGV</h2>
+                    <h5>{user.email}</h5>
                     <span className="role-tag">{user.role.toUpperCase()}</span>
                 </div>
                 <nav className="menu">

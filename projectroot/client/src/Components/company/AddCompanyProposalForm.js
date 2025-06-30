@@ -1,11 +1,13 @@
 // src/Components/company/AddCompanyProposalForm.js
 
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select'; // Importar o componente da biblioteca
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/Dashboard.css';
+import '../../styles/CustomSelect.css'; // Não se esqueça de criar e estilizar
 
 const AddCompanyProposalForm = ({ onProposalAdded }) => {
-    // 1. Estado inicial completo com todos os campos da tabela 'proposals'
+    // Estado inicial completo com todos os campos da tabela 'proposals'
     const [formData, setFormData] = useState({
         title: '',
         proposalType: 'emprego',
@@ -18,36 +20,52 @@ const AddCompanyProposalForm = ({ onProposalAdded }) => {
         targetDepartmentIds: [],
         skillIds: []
     });
-    const [departments, setDepartments] = useState([]);
-    const [allSkills, setAllSkills] = useState([]);
+    
+    // Estados para guardar as opções formatadas para a biblioteca react-select
+    const [departmentOptions, setDepartmentOptions] = useState([]);
+    const [skillOptions, setSkillOptions] = useState([]);
+    
     const { token } = useAuth();
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!token) return;
             try {
-                const deptRes = await fetch('/api/departments', { headers: { 'Authorization': `Bearer ${token}` } });
-                setDepartments(await deptRes.json());
-                const skillRes = await fetch('/api/skills', { headers: { 'Authorization': `Bearer ${token}` } });
-                setAllSkills(await skillRes.json());
+                // Fazer os pedidos para a API em paralelo
+                const [deptRes, skillsRes] = await Promise.all([
+                    fetch('/api/departments', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch('/api/skills', { headers: { 'Authorization': `Bearer ${token}` } })
+                ]);
+
+                const departmentsData = await deptRes.json();
+                const allSkillsData = await skillsRes.json();
+
+                // Formatar os dados para o formato que a react-select espera: { value: '...', label: '...' }
+                setDepartmentOptions(departmentsData.map(d => ({ value: d.id, label: d.name })));
+                setSkillOptions(allSkillsData.map(s => ({ value: s.id, label: `${s.name} (${s.type})` })));
             } catch (error) {
-                console.error("Failed to fetch initial data:", error);
+                console.error("Failed to fetch initial data for the form:", error);
             }
         };
         fetchData();
     }, [token]);
 
+    // Função genérica para lidar com a mudança em inputs de texto, data, e select simples
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prevData => ({
-            ...prevData,
-            [name]: value,
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleMultiSelectChange = (e) => {
-        const { name } = e.target;
-        const selectedIds = Array.from(e.target.selectedOptions, option => option.value).map(Number); // Converte para número
-        setFormData(prevData => ({ ...prevData, [name]: selectedIds }));
+    // Função para lidar com a seleção múltipla de Departamentos
+    const handleDepartmentsChange = (selectedOptions) => {
+        const selectedIds = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
+        setFormData(prev => ({ ...prev, targetDepartmentIds: selectedIds }));
+    };
+
+    // Função para lidar com a seleção múltipla de Competências
+    const handleSkillsChange = (selectedOptions) => {
+        const selectedIds = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
+        setFormData(prev => ({ ...prev, skillIds: selectedIds }));
     };
 
     const handleSubmit = async (e) => {
@@ -60,7 +78,7 @@ const AddCompanyProposalForm = ({ onProposalAdded }) => {
             });
             if (!response.ok) throw new Error((await response.json()).error || "Erro desconhecido");
             alert('Proposta submetida com sucesso! Ficará pendente de validação.');
-            onProposalAdded();
+            onProposalAdded(); // Chama a função para mudar de vista no dashboard
         } catch (error) {
             alert(`Erro: ${error.message}`);
         }
@@ -71,7 +89,6 @@ const AddCompanyProposalForm = ({ onProposalAdded }) => {
             <h2>Submeter Nova Proposta</h2>
             <form onSubmit={handleSubmit} className="overlay-form">
                 
-                {/* 2. Formulário JSX completo */}
                 <div className="form-group">
                     <label>Título da Proposta</label>
                     <input type="text" name="title" value={formData.title} onChange={handleChange} required />
@@ -94,40 +111,43 @@ const AddCompanyProposalForm = ({ onProposalAdded }) => {
                 </div>
 
                 <div className="form-group">
-                    <label>Departamentos Alvo (Ctrl/Cmd para selecionar vários)</label>
-                    <select
-                        name="targetDepartmentIds"
-                        value={formData.targetDepartmentIds}
-                        onChange={handleMultiSelectChange}
-                        multiple
+                    <label>Departamentos Alvo</label>
+                    <Select
+                        isMulti
+                        name="departments"
+                        options={departmentOptions}
+                        className="custom-react-select-container"
+                        classNamePrefix="custom-react-select"
+                        placeholder="Selecione um ou mais departamentos..."
+                        onChange={handleDepartmentsChange}
+                        noOptionsMessage={() => "Nenhum departamento encontrado"}
                         required
-                        size="5"
-                    >
-                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
+                    />
                 </div>
 
                 <div className="form-group">
-                    <label>Competências (Ctrl/Cmd para selecionar vários)</label>
-                    <select
-                        name="skillIds"
-                        value={formData.skillIds}
-                        onChange={handleMultiSelectChange}
-                        multiple
-                        size="8"
-                    >
-                        {allSkills.map(s => <option key={s.id} value={s.id}>{s.name} ({s.type})</option>)}
-                    </select>
+                    <label>Competências</label>
+                    <Select
+                        isMulti
+                        isSearchable
+                        name="skills"
+                        options={skillOptions}
+                        className="custom-react-select-container"
+                        classNamePrefix="custom-react-select"
+                        placeholder="Pesquise e selecione competências..."
+                        onChange={handleSkillsChange}
+                        noOptionsMessage={() => "Nenhuma competência encontrada"}
+                    />
                 </div>
 
                 <div className="form-group-grid">
                     <div className="form-group">
                         <label>Local de Trabalho</label>
-                        <input type="text" name="workLocation" value={formData.workLocation} onChange={handleChange} placeholder="Ex: Viseu, Remoto" />
+                        <input type="text" name="workLocation" value={formData.workLocation} onChange={handleChange} placeholder="Ex: Presencial, Remoto" />
                     </div>
                     <div className="form-group">
                         <label>Tipo de Contrato</label>
-                        <input type="text" name="contractType" value={formData.contractType} onChange={handleChange} placeholder="Ex: Full-time, Part-time" />
+                        <input type="text" name="contractType" value={formData.contractType} onChange={handleChange} placeholder="Ex: Full-time, Estágio Curricular" />
                     </div>
                 </div>
 
