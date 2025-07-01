@@ -51,9 +51,6 @@ const ProposalDetailOverlay = ({
                 <div className="proposal-details-section">
                     <h4>Competências Necessárias</h4>
                     <div className="profile-skills-list">
-                        {/* =============================== */}
-                        {/* A CORREÇÃO ESTÁ NESTA LINHA     */}
-                        {/* =============================== */}
                         {proposal.skills && proposal.skills.length > 0 ? proposal.skills.map(skill => (
                             <span key={skill.id} className="profile-skill-tag">{skill.name}</span>
                         )) : <p>Nenhuma competência especificada.</p>}

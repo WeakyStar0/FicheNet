@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import StudentDetailOverlay from './StudentDetailOverlay'; // 1. Importar o novo componente de overlay
 import '../../styles/Dashboard.css';
 
 const StudentList = () => {
@@ -11,7 +12,12 @@ const StudentList = () => {
     const [filterRemoval, setFilterRemoval] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const { token } = useAuth();
+    
+    // 2. Novo estado para gerir qual estudante está selecionado para o overlay
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [isFetchingDetails, setIsFetchingDetails] = useState(false);
 
+    // Função para buscar a lista geral de estudantes (inalterada)
     const fetchStudents = async () => {
         setIsLoading(true);
         try {
@@ -30,9 +36,12 @@ const StudentList = () => {
     };
 
     useEffect(() => {
-        fetchStudents();
+        if (token) {
+            fetchStudents();
+        }
     }, [token]);
 
+    // Lógica de filtragem da lista (inalterada)
     useEffect(() => {
         let result = students;
         if (searchTerm) {
@@ -47,6 +56,7 @@ const StudentList = () => {
         setFilteredStudents(result);
     }, [searchTerm, filterRemoval, students]);
 
+    // Função para apagar o estudante (inalterada)
     const handleDeleteStudent = async (studentId, studentName) => {
         if (window.confirm(`Tem a certeza que deseja apagar permanentemente a conta de ${studentName}? Esta ação não pode ser desfeita.`)) {
             try {
@@ -54,20 +64,32 @@ const StudentList = () => {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ocorreu um erro ao apagar a conta.');
-                }
-                
+                if (!response.ok) throw new Error(data.error || 'Ocorreu um erro.');
                 alert(data.message);
-                fetchStudents(); // Atualiza a lista para remover o utilizador apagado
-
+                fetchStudents();
             } catch (error) {
                 console.error("Erro ao apagar estudante:", error);
                 alert(`Erro: ${error.message}`);
             }
+        }
+    };
+
+    // 3. Nova função para buscar os detalhes de um estudante específico e abrir o overlay
+    const handleViewDetails = async (studentId) => {
+        setIsFetchingDetails(true);
+        try {
+            const response = await fetch(`/api/admin/students/${studentId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error((await response.json()).error);
+            const studentDetails = await response.json();
+            setSelectedStudent(studentDetails);
+        } catch (error) {
+            console.error("Erro ao buscar detalhes do estudante:", error);
+            alert(`Erro: ${error.message}`);
+        } finally {
+            setIsFetchingDetails(false);
         }
     };
 
@@ -93,19 +115,20 @@ const StudentList = () => {
                     Mostrar apenas pedidos de remoção
                 </label>
             </div>
-            <table className="data-table">
+            
+            <table className="data-table clickable-rows">
                 <thead>
                     <tr>
                         <th>Nome Completo</th>
                         <th>Email</th>
                         <th>Curso</th>
                         <th>Estado</th>
-                        <th>Ações</th> {/* 3. Nova coluna para as ações */}
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredStudents.map(student => (
-                        <tr key={student.id} className={student.wants_to_be_removed ? 'removal-request' : ''}>
+                    {filteredStudents.length > 0 ? filteredStudents.map(student => (
+                        <tr key={student.id} onClick={() => handleViewDetails(student.id)} className={student.wants_to_be_removed ? 'removal-request' : ''}>
                             <td>{student.full_name}</td>
                             <td>{student.email}</td>
                             <td>{student.course || 'N/A'}</td>
@@ -115,20 +138,35 @@ const StudentList = () => {
                                 )}
                             </td>
                             <td>
-                                {/* 4. Botão de apagar só aparece se houver pedido */}
                                 {student.wants_to_be_removed && (
                                     <button
                                         className="btn-delete-small"
-                                        onClick={() => handleDeleteStudent(student.id, student.full_name)}
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Impede que o clique no botão abra o overlay
+                                            handleDeleteStudent(student.id, student.full_name);
+                                        }}
                                     >
                                         Apagar Conta
                                     </button>
                                 )}
                             </td>
                         </tr>
-                    ))}
+                    )) : (
+                        <tr>
+                            <td colSpan="5">Nenhum estudante encontrado com os filtros selecionados.</td>
+                        </tr>
+                    )}
                 </tbody>
             </table>
+            
+            {isFetchingDetails && <p>A carregar detalhes...</p>}
+
+            {selectedStudent && (
+                <StudentDetailOverlay 
+                    student={selectedStudent} 
+                    onClose={() => setSelectedStudent(null)} 
+                />
+            )}
         </div>
     );
 };

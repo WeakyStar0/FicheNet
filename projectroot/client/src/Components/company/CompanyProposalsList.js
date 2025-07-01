@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import ProposalMatchesOverlay from './ProposalMatchesOverlay';
 import '../../styles/Dashboard.css';
 
 const CompanyProposalsList = () => {
     const [proposals, setProposals] = useState([]);
+    const [selectedProposal, setSelectedProposal] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const { token } = useAuth();
 
@@ -33,8 +35,9 @@ const CompanyProposalsList = () => {
     return (
         <div className="list-view-container">
             <h2>Minhas Propostas Submetidas</h2>
-            <p>As suas propostas ficam pendentes de validação por um gestor da ESTGV.</p>
-            <table className="data-table">
+            <p>As suas propostas ficam pendentes de validação por um gestor da ESTGV. Clique numa proposta para ver os estudantes interessados.</p>
+            
+            <table className="data-table clickable-rows">
                 <thead>
                     <tr>
                         <th>Título</th>
@@ -44,11 +47,11 @@ const CompanyProposalsList = () => {
                 </thead>
                 <tbody>
                     {proposals.length > 0 ? proposals.map(prop => (
-                        <tr key={prop.id}>
+                        <tr key={prop.id} onClick={() => setSelectedProposal(prop)}>
                             <td>{prop.title}</td>
                             <td>{prop.proposal_type}</td>
                             <td>
-                                <span className={`status-badge ${prop.status}`}>{prop.status.replace(/_/g, ' ')}</span>
+                                <span className={`status-badge ${prop.status.replace(/_/g, ' ')}`}>{prop.status.replace(/_/g, ' ')}</span>
                             </td>
                         </tr>
                     )) : (
@@ -58,6 +61,13 @@ const CompanyProposalsList = () => {
                     )}
                 </tbody>
             </table>
+
+            {selectedProposal && (
+                <ProposalMatchesOverlay
+                    proposal={selectedProposal}
+                    onClose={() => setSelectedProposal(null)}
+                />
+            )}
         </div>
     );
 };

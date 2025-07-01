@@ -136,6 +136,45 @@ app.get('/api/admin/students', authenticateToken, async (req, res) => {
   }
 });
 
+// --- ROTA DE ADMIN PARA OBTER DETALHES DE UM ESTUDANTE ESPECÍFICO ---
+app.get('/api/admin/students/:studentId', authenticateToken, async (req, res) => {
+  const { role } = req.user; // Quem está a pedir
+  const { studentId } = req.params; // ID do estudante a ser visto
+
+  // Verificação de permissão
+  if (role !== 'admin') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  try {
+    // Query complexa que junta tudo: perfil, sobre, competências.
+    const query = `
+            SELECT 
+                u.id, u.email, u.aboutme,
+                sp.full_name, sp.course, sp.graduation_year,
+                sp.institutional_email, sp.personal_email, sp.wants_to_be_removed,
+                COALESCE(
+                    (SELECT json_agg(s.*) FROM skills s JOIN student_skills ss ON s.id = ss.skill_id WHERE ss.student_profile_id = sp.id),
+                    '[]'::json
+                ) as skills
+            FROM users u
+            JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE u.id = $1 AND u.role = 'student'
+        `;
+    const { rows } = await db.pool.query(query, [studentId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Estudante não encontrado.' });
+    }
+
+    res.json(rows[0]);
+
+  } catch (err) {
+    console.error(`Erro ao buscar detalhes do estudante (ID: ${studentId}):`, err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
 
 // --- ROTA SIMPLES PARA OBTER LISTA DE EMPRESAS (ID E NOME) ---
 app.get('/api/companies/list', authenticateToken, async (req, res) => {
@@ -148,7 +187,7 @@ app.get('/api/companies/list', authenticateToken, async (req, res) => {
   }
 });
 
-// --- ROTA PARA UM GESTOR OU EMPRESA CRIAR UMA PROPOSTA (VERSÃO FINAL E COMPLETA) ---
+// --- ROTA PARA UM GESTOR OU EMPRESA CRIAR UMA PROPOSTA ---
 app.post('/api/proposals', authenticateToken, async (req, res) => {
   // Obter dados do utilizador autenticado a partir do token
   const { userId, role } = req.user;
@@ -259,6 +298,78 @@ app.post('/api/proposals', authenticateToken, async (req, res) => {
   } finally {
     // 12. Libertar a conexão de volta para a pool
     client.release();
+  }
+});
+
+// --- ROTA PARA UMA EMPRESA OBTER OS ESTUDANTES INTERESSADOS NUMA PROPOSTA ---
+app.get('/api/proposals/:proposalId/matches', authenticateToken, async (req, res) => {
+  const { userId, role } = req.user;
+  const { proposalId } = req.params;
+
+  if (role !== 'company') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  try {
+    // Verificar se a empresa é dona da proposta
+    const ownerCheck = await db.pool.query('SELECT created_by_user_id FROM proposals WHERE id = $1', [proposalId]);
+    if (ownerCheck.rows.length === 0 || ownerCheck.rows[0].created_by_user_id !== userId) {
+      return res.status(403).json({ error: 'Você não tem permissão para ver os interessados nesta proposta.' });
+    }
+
+    // Buscar todos os estudantes que deram match (têm interesse)
+    const query = `
+            SELECT 
+                sp.id, sp.full_name, sp.course, sp.graduation_year,
+                COALESCE(
+                    (SELECT json_agg(s.name) FROM skills s JOIN student_skills ss ON s.id = ss.skill_id WHERE ss.student_profile_id = sp.id),
+                    '[]'::json
+                ) as skills,
+                m.is_notified
+            FROM student_profiles sp
+            JOIN matches m ON sp.id = m.student_profile_id
+            WHERE m.proposal_id = $1
+            ORDER BY sp.full_name
+        `;
+    const { rows } = await db.pool.query(query, [proposalId]);
+    res.json(rows);
+
+  } catch (err) {
+    console.error('Erro ao buscar interessados na proposta:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// --- ROTA PARA UMA EMPRESA ACEITAR UM ESTUDANTE PARA UMA PROPOSTA ---
+app.put('/api/proposals/:proposalId/matches/:studentProfileId/accept', authenticateToken, async (req, res) => {
+  const { userId, role } = req.user;
+  const { proposalId, studentProfileId } = req.params;
+
+  if (role !== 'company') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  try {
+    // Dupla verificação de segurança: a empresa é dona da proposta?
+    const ownerCheck = await db.pool.query('SELECT created_by_user_id FROM proposals WHERE id = $1', [proposalId]);
+    if (ownerCheck.rows.length === 0 || ownerCheck.rows[0].created_by_user_id !== userId) {
+      return res.status(403).json({ error: 'Não pode aceitar candidatos para uma proposta que não é sua.' });
+    }
+
+    // Atualizar o match para is_notified = true
+    const updateQuery = 'UPDATE matches SET is_notified = TRUE WHERE proposal_id = $1 AND student_profile_id = $2';
+    const result = await db.pool.query(updateQuery, [proposalId, studentProfileId]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Match não encontrado.' });
+    }
+
+    // Aqui, no futuro, poderia ser disparado um email de notificação para o estudante.
+    res.status(200).json({ message: 'Estudante aceite! Ele será notificado.' });
+
+  } catch (err) {
+    console.error('Erro ao aceitar estudante:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
 
@@ -376,35 +487,35 @@ app.post('/api/admins', async (req, res) => {
 
 // --- ROTA DE ADMIN PARA APAGAR UM ESTUDANTE ---
 app.delete('/api/admin/students/:userIdToDelete', authenticateToken, async (req, res) => {
-    const { role } = req.user; // Obtém o perfil de quem está a fazer o pedido
-    const { userIdToDelete } = req.params; // Obtém o ID do utilizador a ser apagado
+  const { role } = req.user; // Obtém o perfil de quem está a fazer o pedido
+  const { userIdToDelete } = req.params; // Obtém o ID do utilizador a ser apagado
 
-    // 1. Verificação de segurança: apenas administradores podem apagar contas.
-    if (role !== 'admin') {
-        return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem executar esta ação.' });
+  // 1. Verificação de segurança: apenas administradores podem apagar contas.
+  if (role !== 'admin') {
+    return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem executar esta ação.' });
+  }
+
+  if (!userIdToDelete) {
+    return res.status(400).json({ error: 'ID do utilizador a apagar é obrigatório.' });
+  }
+
+  try {
+    // Graças ao ON DELETE CASCADE na base de dados, apagar o 'user' irá apagar
+    // automaticamente o 'student_profile' e todas as associações.
+    const deleteQuery = 'DELETE FROM users WHERE id = $1';
+    const result = await db.pool.query(deleteQuery, [userIdToDelete]);
+
+    // Verificar se alguma linha foi de facto apagada
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Utilizador não encontrado ou já foi apagado.' });
     }
 
-    if (!userIdToDelete) {
-        return res.status(400).json({ error: 'ID do utilizador a apagar é obrigatório.' });
-    }
+    res.status(200).json({ message: 'Conta de estudante apagada com sucesso.' });
 
-    try {
-        // Graças ao ON DELETE CASCADE na base de dados, apagar o 'user' irá apagar
-        // automaticamente o 'student_profile' e todas as associações.
-        const deleteQuery = 'DELETE FROM users WHERE id = $1';
-        const result = await db.pool.query(deleteQuery, [userIdToDelete]);
-
-        // Verificar se alguma linha foi de facto apagada
-        if (result.rowCount === 0) {
-            return res.status(404).json({ error: 'Utilizador não encontrado ou já foi apagado.' });
-        }
-
-        res.status(200).json({ message: 'Conta de estudante apagada com sucesso.' });
-
-    } catch (err) {
-        console.error(`Erro ao apagar utilizador (ID: ${userIdToDelete}):`, err);
-        res.status(500).json({ error: 'Erro interno do servidor ao apagar a conta.' });
-    }
+  } catch (err) {
+    console.error(`Erro ao apagar utilizador (ID: ${userIdToDelete}):`, err);
+    res.status(500).json({ error: 'Erro interno do servidor ao apagar a conta.' });
+  }
 });
 
 
@@ -866,20 +977,20 @@ app.post('/api/proposals/:proposalId/match', authenticateToken, async (req, res)
 
 // --- ROTA PARA UM ESTUDANTE OBTER AS SUAS PROPOSTAS DE INTERESSE (MATCHES) ---
 app.get('/api/students/me/matches', authenticateToken, async (req, res) => {
-    const { userId, role } = req.user;
+  const { userId, role } = req.user;
 
-    if (role !== 'student') {
-        return res.status(403).json({ error: 'Acesso negado.' });
+  if (role !== 'student') {
+    return res.status(403).json({ error: 'Acesso negado.' });
+  }
+
+  try {
+    const studentProfile = await db.pool.query('SELECT id FROM student_profiles WHERE user_id = $1', [userId]);
+    if (studentProfile.rows.length === 0) {
+      return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
     }
+    const studentProfileId = studentProfile.rows[0].id;
 
-    try {
-        const studentProfile = await db.pool.query('SELECT id FROM student_profiles WHERE user_id = $1', [userId]);
-        if (studentProfile.rows.length === 0) {
-            return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
-        }
-        const studentProfileId = studentProfile.rows[0].id;
-
-        const query = `
+    const query = `
             SELECT 
                 p.id,
                 p.title,
@@ -891,6 +1002,7 @@ app.get('/api/students/me/matches', authenticateToken, async (req, res) => {
                 p.interview_contact_name,
                 p.interview_contact_email,
                 cp.company_name,
+                m.is_notified,
                 COALESCE(
                     (SELECT json_agg(s.*) FROM skills s JOIN proposal_skills ps ON s.id = ps.skill_id WHERE ps.proposal_id = p.id),
                     '[]'::json
@@ -901,12 +1013,12 @@ app.get('/api/students/me/matches', authenticateToken, async (req, res) => {
             WHERE m.student_profile_id = $1
             ORDER BY m.created_at DESC
         `;
-        const { rows } = await db.pool.query(query, [studentProfileId]);
-        res.json(rows);
-    } catch (err) {
-        console.error('Erro ao buscar matches do estudante:', err);
-        res.status(500).json({ error: 'Erro interno do servidor.' });
-    }
+    const { rows } = await db.pool.query(query, [studentProfileId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao buscar matches do estudante:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 app.delete('/api/proposals/:proposalId/match', authenticateToken, async (req, res) => {
@@ -965,16 +1077,16 @@ app.delete('/api/proposals/:proposalId/match', authenticateToken, async (req, re
 
 // --- ROTA PARA OBTER RECOMENDAÇÕES DE PROPOSTAS ---
 app.get('/api/proposals/recommended', authenticateToken, async (req, res) => {
-    const { userId, role } = req.user;
+  const { userId, role } = req.user;
 
-    if (role !== 'student') {
-        return res.status(403).json({ error: 'Apenas estudantes podem receber recomendações.' });
-    }
+  if (role !== 'student') {
+    return res.status(403).json({ error: 'Apenas estudantes podem receber recomendações.' });
+  }
 
-    const client = await db.pool.connect(); // Mova a conexão para o topo do try-catch principal
-    try {
-        // 1. Obter o perfil completo do estudante
-        const studentProfileQuery = `
+  const client = await db.pool.connect(); // Mova a conexão para o topo do try-catch principal
+  try {
+    // 1. Obter o perfil completo do estudante
+    const studentProfileQuery = `
             SELECT sp.*, d.id as department_id,
                    COALESCE(
                        (SELECT json_agg(s.id) FROM skills s JOIN student_skills ss ON s.id = ss.skill_id WHERE ss.student_profile_id = sp.id),
@@ -984,16 +1096,16 @@ app.get('/api/proposals/recommended', authenticateToken, async (req, res) => {
             LEFT JOIN departments d ON sp.course = d.name
             WHERE sp.user_id = $1
         `;
-        const studentResult = await client.query(studentProfileQuery, [userId]);
-        if (studentResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
-        }
-        const studentProfile = studentResult.rows[0];
-        const studentSkillIds = new Set(studentProfile.skill_ids);
-        const studentDepartmentId = studentProfile.department_id;
+    const studentResult = await client.query(studentProfileQuery, [userId]);
+    if (studentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Perfil de estudante não encontrado.' });
+    }
+    const studentProfile = studentResult.rows[0];
+    const studentSkillIds = new Set(studentProfile.skill_ids);
+    const studentDepartmentId = studentProfile.department_id;
 
-        // 2. Obter TODAS as propostas ativas com a informação COMPLETA
-        const proposalsQuery = `
+    // 2. Obter TODAS as propostas ativas com a informação COMPLETA
+    const proposalsQuery = `
             SELECT 
                 p.id, p.title, p.description, p.proposal_type, p.work_location,
                 p.application_deadline, p.contract_type, p.interview_contact_name, p.interview_contact_email,
@@ -1005,42 +1117,42 @@ app.get('/api/proposals/recommended', authenticateToken, async (req, res) => {
             JOIN company_profiles cp ON p.company_id = cp.id
             WHERE p.status = 'active'
         `;
-        const proposalsResult = await client.query(proposalsQuery);
-        const allProposals = proposalsResult.rows;
-        
-        const allSkillsResult = await client.query('SELECT id, type FROM skills');
-        const skillTypeMap = new Map(allSkillsResult.rows.map(s => [s.id, s.type]));
-        
-        // 3. O ALGORITMO DE SCORING (inalterado)
-        const scoredProposals = allProposals.map(proposal => {
-            let score = 0;
-            proposal.required_skill_ids.forEach(requiredSkillId => {
-                if (studentSkillIds.has(requiredSkillId)) {
-                    const skillType = skillTypeMap.get(requiredSkillId);
-                    if (skillType === 'technical') score += 15;
-                    else if (skillType === 'softskill') score += 5;
-                }
-            });
-            if (studentDepartmentId && proposal.target_department_ids.includes(studentDepartmentId)) {
-                score += 5;
-            }
-            return { ...proposal, score };
-        });
+    const proposalsResult = await client.query(proposalsQuery);
+    const allProposals = proposalsResult.rows;
 
-        // 4. Filtrar e ordenar (inalterado)
-        const recommendations = scoredProposals
-            .filter(p => p.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 5);
+    const allSkillsResult = await client.query('SELECT id, type FROM skills');
+    const skillTypeMap = new Map(allSkillsResult.rows.map(s => [s.id, s.type]));
 
-        res.json(recommendations);
+    // 3. O ALGORITMO DE SCORING (inalterado)
+    const scoredProposals = allProposals.map(proposal => {
+      let score = 0;
+      proposal.required_skill_ids.forEach(requiredSkillId => {
+        if (studentSkillIds.has(requiredSkillId)) {
+          const skillType = skillTypeMap.get(requiredSkillId);
+          if (skillType === 'technical') score += 15;
+          else if (skillType === 'softskill') score += 5;
+        }
+      });
+      if (studentDepartmentId && proposal.target_department_ids.includes(studentDepartmentId)) {
+        score += 5;
+      }
+      return { ...proposal, score };
+    });
 
-    } catch (err) {
-        console.error('Erro ao gerar recomendações:', err);
-        res.status(500).json({ error: 'Erro interno do servidor.' });
-    } finally {
-        if (client) client.release(); // Garante que o client é libertado
-    }
+    // 4. Filtrar e ordenar (inalterado)
+    const recommendations = scoredProposals
+      .filter(p => p.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    res.json(recommendations);
+
+  } catch (err) {
+    console.error('Erro ao gerar recomendações:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  } finally {
+    if (client) client.release(); // Garante que o client é libertado
+  }
 });
 
 

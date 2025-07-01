@@ -462,3 +462,44 @@
 .proposal-management-form h4 {
     margin-top: 0;
 }
+
+.list-view-container.compact { padding: 0; }
+.btn-success-small { }
+
+.student-tooltip {
+    position: absolute;
+    bottom: 120%;
+    left: 0;
+    width: 300px;
+    background-color: #333;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    z-index: 10;
+    pointer-events: none;
+    opacity: 1;
+    animation: fadeIn 0.2s ease-in-out;
+}
+.tooltip-skills .profile-skills-list.small { gap: 4px; }
+.tooltip-skills .profile-skills-list.small .profile-skill-tag { font-size: 0.75rem; padding: 3px 6px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-badge.success,
+.status-badge.active { 
+    background-color: #2e7d32; 
+    color: white; 
+}
+.status-badge.pending_validation { 
+    background-color: #ff8f00; 
+    color: white; 
+}
