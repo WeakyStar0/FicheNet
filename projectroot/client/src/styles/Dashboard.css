@@ -39,9 +39,11 @@
     text-align: center;
 }
 
-.logo {
-    height: 10vh;
-    margin-bottom: 2vh;
+.logo-dash {
+    width: auto;
+    transform: scale(0.5);
+    position: relative;
+    left: -40%;
 }
 
 .nav-logo {
