@@ -34,7 +34,7 @@ const MainNavbar = () => {
         <header className="main-navbar-wrapper">
             <div className="navbar-section navbar-left">
                 <Link to="/" className="navbar-logo">
-                    <img src="https://imgur.com/F8aAiKi.png" alt="ESTGV Logo" className="nav-logo" />
+                    <img src="https://imgur.com/FFcLnAU.png" alt="ESTGV Logo" className="nav-logo" />
                 </Link>
             </div>
             <div className="navbar-section navbar-center">

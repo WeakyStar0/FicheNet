@@ -77,7 +77,7 @@ const Dashboard = () => {
             </Helmet>
             <aside className="sidebar">
                 <div className="logo-section">
-                    <img src="https://imgur.com/F8aAiKi.png" alt="ESTGV Logo" className="logo" />
+                    <img src="https://imgur.com/FFcLnAU.png" alt="ESTGV Logo" className="logo" />
                     <h2>ESTGV</h2>
                     <h5>{user.email}</h5>
                     <span className="role-tag">{user.role.toUpperCase()}</span>

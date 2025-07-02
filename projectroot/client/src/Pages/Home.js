@@ -99,7 +99,7 @@ export const Home = () => {
             <header className="unique-header">
                 <div className="unique-header-left">
                     <div className="unique-logo">
-                        <img src="https://imgur.com/F8aAiKi.png" alt="ESTGV Logo" className="nav-logo" />
+                        <img src="https://imgur.com/FFcLnAU.png" alt="ESTGV Logo" className="nav-logo" />
                     </div>
                 </div>
                 <div className="unique-header-right">
