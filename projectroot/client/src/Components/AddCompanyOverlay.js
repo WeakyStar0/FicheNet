@@ -90,7 +90,7 @@ function AddCompanyOverlay({ onClose, onSubmit }) {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="websiteUrl">Website (Opcional)</label>
+                        <label htmlFor="websiteUrl">Website</label>
                         <input
                             type="url"
                             id="websiteUrl"

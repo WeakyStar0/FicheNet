@@ -93,7 +93,7 @@ export const Home = () => {
     return (
         <div className="hp-landing-page">
             <Helmet>
-                <title>FicheNet - Conectando Talento ao Futuro</title>
+                <title>ESTGV - Conectando Talento ao Futuro</title>
             </Helmet>
 
             <header className="unique-header">
@@ -231,7 +231,7 @@ export const Home = () => {
             
             <footer className="hp-footer">
                 <div className="hp-footer-content">
-                    <p>© 2024 FicheNet ESTGV. Todos os direitos reservados.</p>
+                    <p>© 2025 FicheNet ESTGV. Todos os direitos reservados.</p>
                     <p>Um projeto de TDM / Projeto Integrado III.</p>
                 </div>
             </footer>

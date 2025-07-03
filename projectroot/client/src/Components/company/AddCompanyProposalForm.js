@@ -163,8 +163,8 @@ const AddCompanyProposalForm = ({ onProposalAdded }) => {
                         <input type="text" name="interviewContactName" value={formData.interviewContactName} onChange={handleChange} />
                     </div>
                     <div className="form-group">
-                        <label>Email do Contacto (Opcional)</label>
-                        <input type="email" name="interviewContactEmail" value={formData.interviewContactEmail} onChange={handleChange} />
+                        <label>Email do Contacto</label>
+                        <input type="email" name="interviewContactEmail" value={formData.interviewContactEmail} onChange={handleChange} required />
                     </div>
                 </div>
                 
