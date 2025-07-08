@@ -1,3 +1,20 @@
+.hp-main-nav {
+    display: flex;
+    gap: 1.5rem;
+    margin-left: 2rem;
+}
+
+.hp-nav-link {
+    color: #ccc;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.hp-nav-link:hover {
+    color: white;
+}
+
 .unique-home-wrapper {
     width: 100%;
     min-height: 100vh;

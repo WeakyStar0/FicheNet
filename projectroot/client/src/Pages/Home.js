@@ -30,7 +30,7 @@ export const Home = () => {
     const [password, setPassword] = useState('');
     const [loginType, setLoginType] = useState('ex/aluno');
     const [error, setError] = useState('');
-    
+
     // Slides
     const slides = [
         'https://dep.estgv.ipv.pt/departamentos/dgest/wp-content/uploads/sites/6/2016/06/foto-pag1-2.png',
@@ -103,6 +103,10 @@ export const Home = () => {
                         <img src="https://imgur.com/FFcLnAU.png" alt="ESTGV Logo" className="nav-logo" />
                     </div>
                 </div>
+                <nav className="hp-main-nav">
+                    <Link to="/" className="hp-nav-link">Home</Link>
+                    <Link to="/sobre-nos" className="hp-nav-link">Sobre Nós</Link>
+                </nav>
                 <div className="unique-header-right">
                     {!user ? (
                         <button className="custom-login-icon" onClick={toggleLogin}>
@@ -151,7 +155,7 @@ export const Home = () => {
                     </div>
                 </div>
             )}
-            
+
             <section className="hp-hero-section">
                 <div className="unique-carousel">
                     {slides.map((slide, index) => (
@@ -171,7 +175,7 @@ export const Home = () => {
                         ))}
                     </div>
                 </div>
-                
+
                 <div className="hp-hero-content-wrapper">
                     <div className="hp-hero-content">
                         <h1>Conectando Talento ao Futuro</h1>
@@ -180,7 +184,7 @@ export const Home = () => {
                     </div>
                 </div>
             </section>
-            
+
             <section id="how-it-works" className="hp-section hp-how-it-works-section">
                 <h2>Simples. Rápido. Eficaz.</h2>
                 <div className="hp-steps-container">
@@ -229,7 +233,7 @@ export const Home = () => {
                     <img src="https://logo.clearbit.com/outsystems.com" alt="Outsystems Logo" />
                 </div>
             </section>
-            
+
             <footer className="hp-footer">
                 <div className="hp-footer-content">
                     <p>© 2025 FicheNet ESTGV. Todos os direitos reservados.</p>

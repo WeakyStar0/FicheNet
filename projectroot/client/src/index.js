@@ -15,6 +15,7 @@ import Dashboard from './Pages/Dashboard.js';
 import MainNavbar from './Components/MainNavbar.js';
 import ProtectedRoute from './Components/ProtectedRoute.js';
 import ProposalFeedPage from './Pages/ProposalFeedPage';
+import AboutUsPage from './Pages/AboutUsPage';
 
 const AppLayout = () => {
   const location = useLocation();
@@ -62,6 +63,10 @@ const router = createBrowserRouter([
         path: '/propostas',
         element: <ProtectedRoute allowedRoles={['student']}><ProposalFeedPage /></ProtectedRoute>,
       },
+            {
+        path: '/sobre-nos',
+        element: <AboutUsPage />,
+      }
     ]
   }
 ]);
