@@ -35,7 +35,8 @@ export const Home = () => {
     const slides = [
         'https://dep.estgv.ipv.pt/departamentos/dgest/wp-content/uploads/sites/6/2016/06/foto-pag1-2.png',
         'https://www.estgv.ipv.pt/estgv/fotografias/albuns/estgv/IMG_3513.JPG',
-        'https://www1.esev.ipv.pt/dacomunicacao/wp-content/uploads/2024/12/estgv-800x445.jpg'
+        'https://www1.esev.ipv.pt/dacomunicacao/wp-content/uploads/2024/12/estgv-800x445.jpg',
+        'https://imgur.com/2cvE8b4.png'
     ];
 
     // Lógica do carrossel
