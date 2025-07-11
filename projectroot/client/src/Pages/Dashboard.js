@@ -4,14 +4,16 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Dashboard.css';
 import { Helmet } from 'react-helmet';
+import { FaTachometerAlt, FaUserGraduate, FaChartBar, FaFolderOpen, FaTasks, FaPlusCircle, FaHeart } from 'react-icons/fa';
 
 // Vistas de Admin
 import DashboardHome from '../Components/admin/DashboardHome';
 import StudentList from '../Components/admin/StudentList';
+import AdminStats from '../Components/admin/AdminStats';
 
 // Vistas de Gestor
 import MyProposalsList from '../Components/manager/MyProposalsList';
-import AddProposalForm from '../Components/manager/AddProposalsForm'; // Atenção ao nome do ficheiro aqui
+import AddProposalForm from '../Components/manager/AddProposalsForm';
 import ProposalManagement from '../Components/manager/ProposalManagement';
 
 // Vistas de Empresa
@@ -35,6 +37,7 @@ const Dashboard = () => {
             switch (activeView) {
                 case 'home': return <div><h2>Bem-vindo ao seu Dashboard, {user.email}!</h2><p>Navegue pelas secções na barra lateral.</p><br /><br /><br /><br /><DashboardHome /></div>;
                 case 'students': return <StudentList />;
+                case 'stats': return <AdminStats />;
                 default: return <DashboardHome />;
             }
         }
@@ -86,29 +89,51 @@ const Dashboard = () => {
                     {/* Menu do Admin */}
                     {user.role === 'admin' && (
                         <>
-                            <button onClick={() => setActiveView('home')} className={activeView === 'home' ? 'active' : ''}>Dashboard</button>
-                            <button onClick={() => setActiveView('students')} className={activeView === 'students' ? 'active' : ''}>Estudantes</button>
+                            <button onClick={() => setActiveView('home')} className={activeView === 'home' ? 'active' : ''}>
+                                <FaTachometerAlt /> Dashboard
+                            </button>
+                            <button onClick={() => setActiveView('students')} className={activeView === 'students' ? 'active' : ''}>
+                                <FaUserGraduate /> Estudantes
+                            </button>
+                            <button onClick={() => setActiveView('stats')} className={activeView === 'stats' ? 'active' : ''}>
+                                <FaChartBar /> Estatísticas
+                            </button>
                         </>
                     )}
+
                     {/* Menu do Gestor */}
                     {user.role === 'manager' && (
                         <>
-                            <button onClick={() => setActiveView('home')} className={activeView === 'home' ? 'active' : ''}>Minhas Propostas</button>
-                            <button onClick={() => setActiveView('manage_proposals')} className={activeView === 'manage_proposals' ? 'active' : ''}>Gerir Propostas</button>
+                            <button onClick={() => setActiveView('home')} className={activeView === 'home' ? 'active' : ''}>
+                                <FaFolderOpen /> Minhas Propostas
+                            </button>
+                            <button onClick={() => setActiveView('manage_proposals')} className={activeView === 'manage_proposals' ? 'active' : ''}>
+                                <FaTasks /> Gerir Propostas
+                            </button>
                         </>
                     )}
+
                     {/* Menu da Empresa */}
                     {user.role === 'company' && (
                         <>
-                            <button onClick={() => setActiveView('home')} className={activeView === 'home' ? 'active' : ''}>Minhas Propostas</button>
-                            <button onClick={() => setActiveView('add_proposal')} className={activeView === 'add_proposal' ? 'active' : ''}>Adicionar Proposta</button>
+                            <button onClick={() => setActiveView('home')} className={activeView === 'home' ? 'active' : ''}>
+                                <FaFolderOpen /> Minhas Propostas
+                            </button>
+                            <button onClick={() => setActiveView('add_proposal')} className={activeView === 'add_proposal' ? 'active' : ''}>
+                                <FaPlusCircle /> Adicionar Proposta
+                            </button>
                         </>
                     )}
+
                     {/* Menu do Estudante */}
                     {user.role === 'student' && (
                         <>
-                            <button onClick={() => setActiveView('home')}>Dashboard</button>
-                            <button onClick={() => setActiveView('my_matches')}>Meus Interesses</button>
+                            <button onClick={() => setActiveView('home')} className={activeView === 'home' ? 'active' : ''}>
+                                <FaTachometerAlt /> Dashboard
+                            </button>
+                            <button onClick={() => setActiveView('my_matches')} className={activeView === 'my_matches' ? 'active' : ''}>
+                                <FaHeart /> Meus Interesses
+                            </button>
                         </>
                     )}
                 </nav>

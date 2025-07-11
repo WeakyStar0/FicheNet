@@ -1,9 +1,5 @@
 /* src/styles/AboutUs.css */
 
-/*
-  Wrapper principal que ocupa todo o espaço visível abaixo da navbar
-  Usa flexbox para centrar o contentor principal
-*/
 .about-us-page-wrapper {
     background-color: #121212;
     color: #f1f1f1;
@@ -13,25 +9,20 @@
     justify-content: center;
     align-items: center;
 
-    /* Ocupa a altura total do ecrã, subtraindo a altura da navbar (60px) */
-    height: calc(100vh - 60px); 
+    height: calc(100vh); 
     
     padding: 2rem;
     box-sizing: border-box;
 }
 
-/*
-  O contentor do conteúdo. É aqui que a barra de scroll irá aparecer
-  se o conteúdo do accordion for demasiado grande para o ecrã.
-*/
 .about-us-content-container {
+    top: 20vh;
     width: 100%;
     max-width: 900px;
-    height: 100%; /* Ocupa a altura total do seu parente (.about-us-page-wrapper) */
+    height: 100%;
     
-    overflow-y: auto; /* Adiciona uma barra de scroll vertical APENAS se o conteúdo interno transbordar */
+    overflow-y: auto;
     
-    /* Estilos para a barra de scroll (opcional, mas fica bonito) */
     scrollbar-width: thin;
     scrollbar-color: #555 #1c1c1c;
 }
@@ -69,12 +60,11 @@
     line-height: 1.6;
 }
 
-/* Container do Accordion */
 .about-us-accordion-container {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding-bottom: 2rem; /* Espaço no final para o scroll não colar */
+    padding-bottom: 2rem;
 }
 
 .about-us-accordion-item {
@@ -138,7 +128,7 @@
 }
 
 .about-us-accordion-item.open .about-us-accordion-content {
-    max-height: 500px; /* Altura máxima para a animação. Pode ser ajustada. */
+    max-height: 500px;
     padding: 0 1.5rem 1.5rem 1.5rem;
     border-top: 1px solid #333;
 }
@@ -173,7 +163,7 @@
 /* Media Query para ecrãs mais pequenos (telemóveis) */
 @media (max-width: 768px) {
     .about-us-content-grid {
-        grid-template-columns: 1fr; /* Muda para uma coluna única */
+        grid-template-columns: 1fr;
         text-align: center;
     }
     .about-us-large-image-container {

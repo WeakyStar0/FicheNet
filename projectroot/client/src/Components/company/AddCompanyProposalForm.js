@@ -159,7 +159,7 @@ const AddCompanyProposalForm = ({ onProposalAdded }) => {
                 <h3 className="form-section-title">Contacto para Entrevista</h3>
                 <div className="form-group-grid">
                     <div className="form-group">
-                        <label>Nome do Contacto (Opcional)</label>
+                        <label>Nome do Contacto</label>
                         <input type="text" name="interviewContactName" value={formData.interviewContactName} onChange={handleChange} />
                     </div>
                     <div className="form-group">

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/home.css';
 import '../styles/App.css';
 import { Helmet } from 'react-helmet';
+import { FaUser, FaHome, FaInfoCircle } from 'react-icons/fa';
 
 // Componente para um ícone (SVG) para usar nas secções
 const Icon = ({ path }) => (
@@ -104,13 +105,13 @@ export const Home = () => {
                     </div>
                 </div>
                 <nav className="hp-main-nav">
-                    <Link to="/" className="hp-nav-link">Home</Link>
-                    <Link to="/sobre-nos" className="hp-nav-link">Sobre Nós</Link>
+                    <Link to="/" className="hp-nav-link"> <FaHome/> Home</Link>
+                    <Link to="/sobre-nos" className="hp-nav-link"> <FaInfoCircle/> Sobre Nós</Link>
                 </nav>
                 <div className="unique-header-right">
                     {!user ? (
                         <button className="custom-login-icon" onClick={toggleLogin}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <FaUser size="24"/>
                         </button>
                     ) : (
                         <div className="user-actions-logged-in">

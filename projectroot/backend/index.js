@@ -1158,6 +1158,73 @@ app.get('/api/proposals/recommended', authenticateToken, async (req, res) => {
 
 
 
+
+
+
+// --- ROTA DE ADMIN PARA OBTER ESTATÍSTICAS DA PLATAFORMA ---
+app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado.' });
+    }
+
+    try {
+        const client = await db.pool.connect();
+        
+        // Correr todas as queries de contagem em paralelo para máxima eficiência
+        const [
+            userCountsRes,
+            proposalStatusCountsRes,
+            proposalsByDeptRes,
+            matchesOverTimeRes
+        ] = await Promise.all([
+            // 1. Contagem total de utilizadores por perfil
+            client.query(`SELECT role, COUNT(*) as count FROM users GROUP BY role`),
+            // 2. Contagem de propostas por estado
+            client.query(`SELECT status, COUNT(*) as count FROM proposals GROUP BY status`),
+            // 3. Top 5 departamentos com mais propostas
+            client.query(`
+                SELECT d.name, COUNT(ptd.proposal_id) as proposal_count 
+                FROM departments d 
+                JOIN proposal_target_departments ptd ON d.id = ptd.department_id 
+                GROUP BY d.name 
+                ORDER BY proposal_count DESC 
+                LIMIT 5
+            `),
+            // 4. Número de interesses ("matches") criados por mês (últimos 6 meses)
+            client.query(`
+                SELECT TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as count
+                FROM matches
+                WHERE created_at > NOW() - INTERVAL '6 months'
+                GROUP BY month
+                ORDER BY month ASC
+            `)
+        ]);
+
+        client.release();
+
+        // 5. Formatar os dados para enviar ao frontend
+        const stats = {
+            userCounts: userCountsRes.rows.reduce((acc, row) => ({ ...acc, [row.role]: parseInt(row.count) }), {}),
+            proposalStatusCounts: proposalStatusCountsRes.rows.reduce((acc, row) => ({ ...acc, [row.status]: parseInt(row.count) }), {}),
+            topDepartments: proposalsByDeptRes.rows,
+            matchesOverTime: matchesOverTimeRes.rows
+        };
+
+        res.json(stats);
+
+    } catch (err) {
+        console.error("Erro ao obter estatísticas para admin:", err);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+
+
+
+
+
+
+
+
 // Inicia o servidor
 app.listen(port, () => {
   console.log(`Servidor backend a correr em http://localhost:${port}`);
