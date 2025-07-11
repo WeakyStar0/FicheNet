@@ -5,10 +5,10 @@ import AddStudentOverlay from '../AddStudentOverlay.js';
 import AddAdminOverlay from '../AddAdminOverlay.js';
 import AddCompanyOverlay from '../AddCompanyOverlay.js';
 import AddManagerOverlay from '../AddManagerOverlay.js';
-import '../../styles/Dashboard.css'; // O estilo é reutilizado
+import '../../styles/Dashboard.css';
+import { RiAdminFill, RiBuilding4Fill, RiGraduationCapFill, RiBankFill } from 'react-icons/ri';
 
-// Este componente representa a "página principal" do dashboard do admin,
-// contendo as ações principais e a lógica para os overlays.
+
 const DashboardHome = () => {
     const [isStudentOverlayVisible, setIsStudentOverlayVisible] = useState(false);
     const [isAdminOverlayVisible, setIsAdminOverlayVisible] = useState(false);
@@ -105,28 +105,28 @@ const DashboardHome = () => {
 
             <div className="actions">
                 <div className="action-card" onClick={() => setIsAdminOverlayVisible(true)}>
-                    <div className="icon">👤</div>
+                    <div className="icon"><RiAdminFill/></div>
                     <div>
                         <h3>Adicionar um admin</h3>
                         <p>Crie utilizadores com permissões de administrador.</p>
                     </div>
                 </div>
                 <div className="action-card" onClick={() => setIsCompanyOverlayVisible(true)}>
-                    <div className="icon">🏢</div>
+                    <div className="icon"><RiBuilding4Fill/></div>
                     <div>
                         <h3>Adicionar Empresa</h3>
                         <p>Registe novas empresas para que possam submeter propostas.</p>
                     </div>
                 </div>
                 <div className="action-card" onClick={() => setIsStudentOverlayVisible(true)}>
-                    <div className="icon">🎓</div>
+                    <div className="icon"><RiGraduationCapFill/></div>
                     <div>
                         <h3>Adicionar estudantes</h3>
                         <p>Crie perfis para estudantes e ex-estudantes.</p>
                     </div>
                 </div>
                 <div className="action-card" onClick={() => setIsManagerOverlayVisible(true)}>
-                    <div className="icon">🏛️</div>
+                    <div className="icon"><RiBankFill/></div>
                     <div>
                         <h3>Adicionar gestores</h3>
                         <p>Adicione gestores de departamento para validar propostas.</p>

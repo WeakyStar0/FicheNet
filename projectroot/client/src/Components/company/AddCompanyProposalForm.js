@@ -107,7 +107,7 @@ const AddCompanyProposalForm = ({ onProposalAdded }) => {
 
                 <div className="form-group">
                     <label>Descrição Detalhada</label>
-                    <textarea name="description" value={formData.description} onChange={handleChange} rows="6" required />
+                    <textarea name="description" value={formData.description} onChange={handleChange} rows="6" required className='descProp' />
                 </div>
 
                 <div className="form-group">
