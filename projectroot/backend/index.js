@@ -1227,5 +1227,5 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
 
 // Inicia o servidor
 app.listen(port, () => {
-  console.log(`Servidor backend a correr em http://localhost:${port}`);
+  console.log(`Backend a correr em http://localhost:${port} com NeonDB`);
 });

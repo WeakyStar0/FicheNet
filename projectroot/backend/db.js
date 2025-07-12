@@ -1,17 +1,24 @@
+// backend/db.js
 
 require('dotenv').config();
 const { Pool } = require('pg');
 
+// A biblioteca 'pg' deteta e usa automaticamente a variável de ambiente DATABASE_URL.
+// Se ela não existir, ela procura pelas variáveis individuais (DB_USER, etc.).
+// Esta abordagem é flexível para desenvolvimento e produção.
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_DATABASE,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  // Usamos a connectionString para garantir que ele lê a URL da Neon.
+  connectionString: process.env.DATABASE_URL,
+  
+  // A maioria dos serviços de base de dados na nuvem, como a Neon,
+  // exige uma conexão SSL. Isto é crucial para a segurança.
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-// A correção chave está aqui: exportamos a pool inteira
 module.exports = {
   pool: pool,
-  query: (text, params) => pool.query(text, params),
+  // Não precisamos mais do 'query' separado, podemos usar a pool diretamente.
+  // pool.query(...)
 };
