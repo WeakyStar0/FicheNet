@@ -136,6 +136,66 @@ app.get('/api/admin/students', authenticateToken, async (req, res) => {
   }
 });
 
+// --- ROTA DE ADMIN PARA LISTAR TODOS OS GESTORES ---
+app.get('/api/admin/managers', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado.' });
+    }
+    try {
+        const query = `
+            SELECT u.id, u.email, mp.full_name, d.name as department_name
+            FROM users u
+            JOIN manager_profiles mp ON u.id = mp.user_id
+            LEFT JOIN departments d ON mp.department_id = d.id
+            WHERE u.role = 'manager'
+            ORDER BY mp.full_name
+        `;
+        const { rows } = await db.pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error('Erro ao buscar lista de gestores:', err);
+        res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+});
+
+// --- ROTA DE ADMIN PARA LISTAR TODAS AS EMPRESAS ---
+app.get('/api/admin/companies', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado.' });
+    }
+    try {
+        const query = `
+            SELECT u.id, u.email, cp.company_name, cp.website_url
+            FROM users u
+            JOIN company_profiles cp ON u.id = cp.user_id
+            WHERE u.role = 'company'
+            ORDER BY cp.company_name
+        `;
+        const { rows } = await db.pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error('Erro ao buscar lista de empresas:', err);
+        res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+});
+
+// --- ROTA DE ADMIN PARA LISTAR TODOS OS OUTROS ADMINS ---
+app.get('/api/admin/admins', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado.' });
+    }
+    try {
+        const query = `
+            SELECT id, email, created_at FROM users WHERE role = 'admin' ORDER BY created_at
+        `;
+        const { rows } = await db.pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error('Erro ao buscar lista de admins:', err);
+        res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+});
+
 // --- ROTA DE ADMIN PARA OBTER DETALHES DE UM ESTUDANTE ESPECÍFICO ---
 app.get('/api/admin/students/:studentId', authenticateToken, async (req, res) => {
   const { role } = req.user; // Quem está a pedir
